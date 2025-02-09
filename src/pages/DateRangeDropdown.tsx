@@ -79,23 +79,23 @@ const DateRangeDropdown: React.FC<DateRangeDropdownProps> = ({ selectedOption, o
     }, [startDate, endDate]);
 
     return (
-        <div className="relative inline-block text-left">
-            <div>
+        <div className="relative inline-block text-left w-64">
+            <div className="w-full">
                 <button
                     type="button"
-                    className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="inline-flex justify-between w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     id="options-menu"
                     aria-haspopup="true"
                     aria-expanded={isOpen}
                     onClick={toggleDropdown}
                 >
-                    {selectedOption}
-                    <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
+                    <span className="truncate">{selectedOption}</span>
+                    <ChevronDownIcon className="h-5 w-5 ml-2" aria-hidden="true" />
                 </button>
             </div>
 
             {isOpen && (
-                <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                <div className="origin-top-right absolute right-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                     <div
                         className="py-1"
                         role="menu"
@@ -121,7 +121,7 @@ const DateRangeDropdown: React.FC<DateRangeDropdownProps> = ({ selectedOption, o
             )}
 
             {isCustomDateRangeOpen && (
-                <div className="fixed inset-0 z-20 overflow-y-auto">
+                <div className="fixed inset-0 z-50 overflow-y-auto">
                     <div className="flex items-center justify-center min-h-screen px-4 pt-6 pb-20 text-center sm:block sm:p-0">
                         <div className="fixed inset-0 transition-opacity" aria-hidden="true">
                             <div className="absolute inset-0 bg-gray-900 opacity-75"></div>
@@ -129,7 +129,7 @@ const DateRangeDropdown: React.FC<DateRangeDropdownProps> = ({ selectedOption, o
 
                         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-50">
                             <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                 <div>
                                     <div className="mt-3 text-center sm:mt-0 sm:text-left">

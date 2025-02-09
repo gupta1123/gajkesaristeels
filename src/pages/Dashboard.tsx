@@ -1648,129 +1648,164 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="container-dashboard w-full max-w-[100vw] mx-auto py-4 sm:py-8 px-3 sm:px-4 overflow-x-hidden">
-      {selectedState && !selectedEmployee ? (
-        <>
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold capitalize">{selectedState === 'unknown' ? 'Unknown State' : selectedState}</h1>
-            <Button variant="outline" size="sm" onClick={handleBackToMainDashboard}>
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </div>
-          <div className="mb-8">
-            <DateRangeDropdown selectedOption={selectedOption} onDateRangeChange={handleDateRangeChange} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {isLoading ? renderSkeletonCards() : (
-              employeeCards.length > 0 ? employeeCards : <p className="col-span-full text-center text-muted-foreground">No employees with completed visits in this date range.</p>
-            )}
-          </div>
-        </>
-      ) : selectedEmployee && employeeDetails ? (
-        <EmployeeDetails
-          employeeDetails={employeeDetails}
-          selectedEmployee={selectedEmployee}
-          setSelectedEmployee={setSelectedEmployee}
-          handleDateRangeChange={handleDateRangeChange}
-          selectedOption={selectedOption}
-          handleViewDetails={handleViewDetails}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          isLoading={isLoading}
-          onBackClick={handleBackToMainDashboard}
-        />
-      ) : (
-        <>
-          <div className="flex flex-col md:flex-row justify-between items-center mb-4 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-3 md:mb-0">Sales Dashboard</h1>
-            <DateRangeDropdown selectedOption={selectedOption} onDateRangeChange={handleDateRangeChange} />
-          </div>
-          {renderDashboardOverview()}
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 px-1">States Overview</h2>
-            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-6">
+          {selectedState && !selectedEmployee ? (
+            <>
+              <h1 className="text-3xl font-bold capitalize">
+                {selectedState === 'unknown' ? 'Unknown State' : selectedState}
+              </h1>
+              <div className="flex items-center space-x-4">
+                <DateRangeDropdown
+                  selectedOption={selectedOption}
+                  onDateRangeChange={handleDateRangeChange}
+                />
+                <Button variant="outline" size="sm" onClick={handleBackToMainDashboard}>
+                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </div>
+            </>
+          ) : selectedEmployee && employeeDetails ? (
+            <>
+              <h1 className="text-3xl font-bold capitalize">Employee Details</h1>
+              <div className="flex items-center space-x-4">
+                <DateRangeDropdown
+                  selectedOption={selectedOption}
+                  onDateRangeChange={handleDateRangeChange}
+                />
+                <Button variant="outline" size="sm" onClick={handleBackToMainDashboard}>
+                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl sm:text-3xl font-bold">Sales Dashboard</h1>
+              <div className="flex items-center space-x-4">
+                <DateRangeDropdown
+                  selectedOption={selectedOption}
+                  onDateRangeChange={handleDateRangeChange}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {selectedState && !selectedEmployee ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? renderSkeletonCards() : (
-                stateCards.length > 0 ? stateCards : 
-                <p className="col-span-full text-center text-muted-foreground text-sm sm:text-base">
-                  No states with active employees in this date range.
+                employeeCards.length > 0 ? employeeCards : 
+                <p className="col-span-full text-center text-muted-foreground">
+                  No employees with completed visits in this date range.
                 </p>
               )}
             </div>
-          </div>
-          <div className="mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Live Employee Locations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isMapLoading ? (
-                  <div className="flex justify-center items-center h-[600px]">
-                    <ClipLoader color="#4A90E2" size={50} />
-                  </div>
-                ) : (
-                  <>
-                    {employeeLocations.length > 0 ? (
-                      <>
-                        <div className="relative">
-                          <div ref={mapContainer} className="rounded-lg border-2 border-gray-300 shadow-lg mb-4" style={{ width: '100%', height: '600px' }} />
-                          <div className="absolute top-4 right-4 z-10">
-                            <Button 
-                              variant="secondary" 
-                              size="sm" 
-                              onClick={handleResetMap}
-                              className="bg-white shadow-md hover:bg-gray-100 flex items-center gap-2"
-                            >
-                              <svg 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                width="16" 
-                                height="16" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                strokeWidth="2" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
+          </>
+        ) : selectedEmployee && employeeDetails ? (
+          <EmployeeDetails
+            employeeDetails={employeeDetails}
+            selectedEmployee={selectedEmployee}
+            setSelectedEmployee={setSelectedEmployee}
+            handleDateRangeChange={handleDateRangeChange}
+            selectedOption={selectedOption}
+            handleViewDetails={handleViewDetails}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            isLoading={isLoading}
+            onBackClick={handleBackToMainDashboard}
+          />
+        ) : (
+          <>
+            {renderDashboardOverview()}
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 px-1">States Overview</h2>
+              <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {isLoading ? renderSkeletonCards() : (
+                  stateCards.length > 0 ? stateCards : 
+                  <p className="col-span-full text-center text-muted-foreground text-sm sm:text-base">
+                    No states with active employees in this date range.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="mb-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Live Employee Locations</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isMapLoading ? (
+                    <div className="flex justify-center items-center h-[600px]">
+                      <ClipLoader color="#4A90E2" size={50} />
+                    </div>
+                  ) : (
+                    <>
+                      {employeeLocations.length > 0 ? (
+                        <>
+                          <div className="relative">
+                            <div ref={mapContainer} className="rounded-lg border-2 border-gray-300 shadow-lg mb-4" style={{ width: '100%', height: '600px' }} />
+                            <div className="absolute top-4 right-4 z-10">
+                              <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                onClick={handleResetMap}
+                                className="bg-white shadow-md hover:bg-gray-100 flex items-center gap-2"
                               >
-                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                                <path d="M3 3v5h5"/>
-                              </svg>
-                              Reset Map View
-                            </Button>
-                          </div>
-                          {showMapLegend && (
-                            <div className="absolute bottom-6 left-6 bg-white p-3 rounded-lg shadow-md">
-                              <div className="text-sm font-semibold mb-2">Map Legend</div>
-                              <div className="space-y-2">
-                                <div className="flex items-center">
-                                  <div className="w-4 h-4 rounded-full bg-[#22C55E] mr-2"></div>
-                                  <span>Current Location</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <div className="w-4 h-4 rounded-full bg-[#EF4444] mr-2"></div>
-                                  <span>Home Location</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <div className="w-4 h-4 rounded-full bg-[#3B82F6] mr-2"></div>
-                                  <span>Visits</span>
+                                <svg 
+                                  xmlns="http://www.w3.org/2000/svg" 
+                                  width="16" 
+                                  height="16" 
+                                  viewBox="0 0 24 24" 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  strokeWidth="2" 
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                  <path d="M3 3v5h5"/>
+                                </svg>
+                                Reset Map View
+                              </Button>
+                            </div>
+                            {showMapLegend && (
+                              <div className="absolute bottom-6 left-6 bg-white p-3 rounded-lg shadow-md">
+                                <div className="text-sm font-semibold mb-2">Map Legend</div>
+                                <div className="space-y-2">
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-[#22C55E] mr-2"></div>
+                                    <span>Current Location</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-[#EF4444] mr-2"></div>
+                                    <span>Home Location</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-[#3B82F6] mr-2"></div>
+                                    <span>Visits</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
+                          <EmployeeLocationList employeeLocations={employeeLocations} onEmployeeClick={handleEmployeeLocationClick} />
+                        </>
+                      ) : (
+                        <div className="flex justify-center items-center h-[600px]">
+                          <p className="text-muted-foreground">No live location data available</p>
                         </div>
-                        <EmployeeLocationList employeeLocations={employeeLocations} onEmployeeClick={handleEmployeeLocationClick} />
-                      </>
-                    ) : (
-                      <div className="flex justify-center items-center h-[600px]">
-                        <p className="text-muted-foreground">No live location data available</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };
