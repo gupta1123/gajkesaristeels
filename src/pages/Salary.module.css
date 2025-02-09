@@ -1,0 +1,199 @@
+.salaryContainer {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.pageTitle {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.filterContainer {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.selectContainer {
+    width: 32%;
+}
+
+.tableView {
+    margin-top: 20px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table th,
+.table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    color: #374151;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.noDataMessage {
+    text-align: center;
+    color: #ef4444;
+    font-size: 16px;
+    margin-top: 20px;
+}
+
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+    .filterContainer {
+        flex-direction: column;
+    }
+
+    .selectContainer {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .table {
+        font-size: 14px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 12px;
+    }
+}
+
+/* Existing mobile card styles */
+.mobileContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+}
+
+.employeeInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    background-color: #3b82f6;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.employeeName {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.employeeRole {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.totalSalary {
+    font-size: 20px;
+    font-weight: 700;
+    color: #047857;
+}
+
+.cardContent {
+    padding: 16px;
+}
+
+.salaryDetails {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.detailItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon {
+    width: 24px;
+    height: 24px;
+    color: #6b7280;
+}
+
+.label {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.anomalyWarning {
+    margin-top: 16px;
+}
+
+.anomalyButton {
+    width: 100%;
+    justify-content: center;
+    background-color: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.warningIcon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+@media (max-width: 640px) {
+    .salaryDetails {
+        grid-template-columns: 1fr;
+    }
+}

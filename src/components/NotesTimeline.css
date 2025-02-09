@@ -1,0 +1,73 @@
+.notes-timeline {
+  position: relative;
+  padding: 20px 0;
+}
+
+.notes-timeline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18px;
+  /* Adjusted for alignment */
+  height: 100%;
+  width: 2px;
+  background-color: #e2e8f0;
+  /* Light gray line for timeline */
+}
+
+.notes-timeline-item {
+  position: relative;
+  padding-left: 40px;
+  /* Increased for better alignment */
+  margin-bottom: 20px;
+}
+
+.notes-timeline-point {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #4f46e5;
+  /* Vivid blue for timeline points */
+}
+
+.notes-timeline-content {
+  padding-left: 20px;
+  margin-top: -5px;
+  /* Adjusted for vertical alignment */
+}
+
+.notes-timeline-date {
+  font-size: 14px;
+  color: #64748b;
+  /* Medium gray for date */
+  margin-bottom: 4px;
+}
+
+.notes-timeline-text {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.notes-timeline-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.text-gray-500 {
+  color: #6b7280;
+  /* Tailwind's gray-500, a medium gray */
+}
+.visit-id-display {
+  display: block;
+  color: #707070;
+  /* A darker shade of gray */
+  text-align: right;
+  /* Aligns text to the right */
+  margin-right: 10px;
+  /* Right margin for proper spacing */
+  cursor: pointer;
+  /* Changes cursor to pointer on hover */
+}

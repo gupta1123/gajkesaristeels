@@ -1,0 +1,291 @@
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background: linear-gradient(to bottom, #2c3e50, #1a1a1a);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px;
+  color: white;
+  z-index: 1000;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
+
+.sidebarHeader {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #6b46c1;
+  text-shadow: 0 0 10px rgba(107, 70, 193, 0.5);
+}
+
+.sidebarContent {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.sidebarList {
+  list-style: none;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebarItem {
+  width: 100%;
+  padding: 10px 0;
+  transition: background-color 0.3s ease;
+}
+
+.sidebarLink {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  color: inherit;
+  text-decoration: none;
+  font-size: 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.sidebarLink:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebarLink.active {
+  background-color: #6b46c1;
+  color: white;
+  box-shadow: 0 4px 6px rgba(107, 70, 193, 0.5);
+}
+
+.sidebarLink.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background-color: #9f7aea;
+  border-radius: 0 5px 5px 0;
+}
+
+.sidebarFooter {
+  width: 100%;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.logoutButton {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(239, 68, 68, 0.5);
+}
+
+.logoutButton:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+}
+
+.sidebarIcon {
+  margin-right: 0.75rem;
+  font-size: 1.25rem;
+}
+
+/* Bottom bar styles */
+.bottomBar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(26, 26, 26, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 10px;
+}
+
+@media (max-width: 768px) {
+  .bottomBar {
+    display: flex;
+  }
+}
+
+.bottomTab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+  transition: all 0.3s ease;
+  padding: 4px 8px;
+  border-radius: 8px;
+  flex: 1;
+  max-width: 70px;
+}
+
+.activeBottomTab {
+  color: #6b46c1;
+  background-color: rgba(107, 70, 193, 0.1);
+}
+
+.bottomIcon {
+  font-size: 1.5rem;
+  margin-bottom: 2px;
+}
+
+.bottomLabel {
+  font-size: 0.6rem;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* More menu styles */
+.moreMenu {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  background: rgba(26, 26, 26, 0.98);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.moreMenuItem {
+  display: flex;
+  align-items: center;
+  color: #a0aec0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 8px;
+}
+
+.activeMoreMenuItem {
+  color: #6b46c1;
+  background-color: rgba(107, 70, 193, 0.1);
+}
+
+.moreMenuIcon {
+  font-size: 1.25rem;
+  margin-right: 12px;
+}
+
+.logoutMenuItem {
+  color: #ef4444;
+  margin-top: 16px;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.moreMenu {
+  animation: slideIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+  
+    to {
+      opacity: 1;
+    }
+  }
+  
+  .moreMenuItem {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  /* Hover effects */
+  .bottomTab:hover,
+  .moreMenuItem:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  /* Transition for smooth color changes */
+  .bottomTab,
+  .moreMenuItem,
+  .bottomIcon,
+  .moreMenuIcon,
+  .bottomLabel {
+    transition: all 0.3s ease;
+  }
+  
+  /* Add a subtle glow effect to active items */
+  .activeBottomTab,
+  .activeMoreMenuItem {
+    box-shadow: 0 0 10px rgba(107, 70, 193, 0.3);
+  }
+  
+  /* Improve readability with text shadow */
+  .bottomLabel,
+  .moreMenuItem span {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Scrollbar styles for the more menu */
+  .moreMenu::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .moreMenu::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .moreMenu::-webkit-scrollbar-thumb {
+    background: rgba(107, 70, 193, 0.5);
+    border-radius: 3px;
+  }
+  
+  .moreMenu::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 70, 193, 0.7);
+  }

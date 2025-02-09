@@ -1,0 +1,12 @@
+/* VisitsTable.module.css */
+.ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .expanded .ellipsis {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+  }

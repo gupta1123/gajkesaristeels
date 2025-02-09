@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+.info-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.info {
+    width: 100%;
+    text-align: center;
+}
+
+.info h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    flex: 1 1 calc(25% - 10px);
+    /* 4 boxes in a row with spacing */
+    text-align: center;
+}
+
+.stat-box p {
+    margin: 0;
+    color: #555;
+    font-size: 0.9em;
+}
+
+.stat-box h3 {
+    margin: 5px 0 0 0;
+    color: #333;
+    font-size: 1.5em;
+}
+
+.stat-box i {
+    font-size: 2em;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.calendar-container {
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .info-card {
+        flex-direction: column;
+    }
+
+    .info {
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+
+    .stats {
+        flex-wrap: wrap;
+    }
+
+    .stat-box {
+        flex-basis: calc(33.33% - 10px);
+        margin-bottom: 10px;
+    }
+
+    .calendar-container {
+        width: 100%;
+    }
+    .stat-box {
+        flex-basis: calc(50% - 10px); /* 2 boxes in a row for tablets */
+        margin-bottom: 10px;
+    }
+    
+}
+
+@media (max-width: 480px) {
+    .stat-box {
+        flex-basis: 100%; /* 1 box per row for mobile */
+        margin-bottom: 10px;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .stats{
+        display: flex;
+        flex-wrap: nowrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats{
+        display: flex;
+        flex-wrap: nowrap;
+    }
+}

@@ -1,0 +1,43 @@
+/* styles.css */
+.calendar .react-calendar__tile {
+    position: relative;
+    padding: 0;
+    height: 100px;
+  }
+  
+  .calendar .react-calendar__tile--now {
+    background: none;
+  }
+  
+  .calendar .react-calendar__tile--dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .calendar .dot-full-day {
+    background-color: green;
+  }
+  
+  .calendar .dot-half-day {
+    background-color: yellow;
+  }
+  
+  .calendar .dot-present {
+    background-color: blue;
+  }
+  
+  .calendar .dot-absent {
+    background-color: red;
+  }
+  
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  
+  .non-working-day {
+    background-color: lightgray !important;
+  }
+  

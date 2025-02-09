@@ -1,0 +1,83 @@
+.settingsContainer {
+    width: 100%;
+    /* max-width: 1200px; */
+    margin: 0 auto;
+    padding-left: 250px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.new {
+    width: 1380px;}
+
+.tabHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    width: 100%;
+}
+
+.tabButton {
+    flex: 1;
+    padding: 10px 20px;
+    border: none;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    font-weight: 500;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.tabButton:hover {
+    background-color: #e0e0e0;
+}
+
+.activeTab {
+    background-color: #cce5ff;
+    color: #0056b3;
+}
+
+.tabContent {
+    padding: 16px;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+@media (min-width: 1024px) {
+    .container {
+        position: relative;
+        left: 220px;
+    }
+}
+
+@media (max-width: 768px) {
+    .settingsContainer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .tabHeader {
+        flex-direction: column;
+    }
+
+    .tabButton {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .new {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .settingsContainer {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .tabContent {
+        padding: 12px;
+    }
+}

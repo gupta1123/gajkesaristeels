@@ -1,0 +1,17 @@
+
+
+@media (min-width: 1024px) {
+    .container-customerType {
+        width: 80%;
+        position: relative;
+        left: -100px;
+    }
+}
+
+@media (min-width: 1400px) {
+    .container-customerType {
+        width: 80%;
+        position: relative;
+        left: -100px;
+    }
+}

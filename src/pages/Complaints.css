@@ -1,0 +1,217 @@
+.outlined-container {
+    border: 1px solid #ddd;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
+}
+
+.container-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tag-blue {
+    background-color: #e6f3ff;
+    color: #0066cc;
+}
+
+.tag-yellow {
+    background-color: #fff9e6;
+    color: #b38600;
+}
+
+.tag-green {
+    background-color: #e6ffe6;
+    color: #006600;
+}
+
+.tag-gray {
+    background-color: #f2f2f2;
+    color: #666666;
+}
+
+.tag-orange {
+    background-color: #fff2e6;
+    color: #cc5500;
+}
+
+.tag-red {
+    background-color: #ffe6e6;
+    color: #cc0000;
+}
+
+@media (max-width: 640px) {
+    .outlined-container {
+        padding: 0.5rem;
+    }
+
+    .container-inner {
+        padding: 0 0.5rem;
+    }
+
+    .mobile-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .mobile-card-header {
+        padding: 1rem;
+        background-color: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .mobile-card-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
+
+    .mobile-card-body {
+        padding: 1rem;
+    }
+
+    .mobile-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .mobile-icon-text {
+        display: flex;
+        align-items: center;
+    }
+
+    .mobile-icon-text svg {
+        margin-right: 0.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container-complaints {
+        position: relative;
+        left: 195px;
+        width: 95%;
+    }
+
+    .container-inner {
+        width: 50%;
+    }
+}
+
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-item {
+    flex: 1 1 200px;
+}
+
+.date-range {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.date-picker {
+    flex: 1;
+}
+
+.view-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.pagination button {
+    margin: 0 0.25rem;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.complaint-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.complaint-table th,
+.complaint-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.complaint-table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+}
+
+.complaint-table tr:hover {
+    background-color: #f9fafb;
+}
+
+.action-button {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.action-button:hover {
+    background-color: #f3f4f6;
+}
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+}
+
+.error-message {
+    color: #ef4444;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.no-results {
+    text-align: center;
+    margin-top: 2rem;
+    color: #6b7280;
+}
+
+@media (min-width: 1024px) {
+    .container-complaints {
+        position: relative;
+        left: 140px;
+        width: 80%;
+    }
+}

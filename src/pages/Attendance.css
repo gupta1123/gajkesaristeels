@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+.info-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background-color: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 1000px;
+}
+
+.info {
+    width: 60%;
+}
+
+.info h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.info p {
+    margin: 5px 0;
+    color: #555;
+    display: flex;
+    align-items: center;
+}
+
+.info p i {
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+    padding: 10px;
+    margin-right: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    flex: 1;
+}
+
+.stat-card i {
+    font-size: 2em;
+    color: #007bff;
+    margin-right: 10px;
+}
+
+.stat-card p {
+    margin: 0;
+    color: #555;
+}
+
+.stat-card h3 {
+    margin: 0;
+    color: #333;
+}
+
+#calendar {
+    border: none;
+    border-radius: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    overflow: visible;
+}
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 10px;
+    background-color: #333;
+    color: white;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    letter-spacing: 1px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+.dates {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 10px;
+    position: relative;
+}
+
+.dates div {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 10px;
+    margin: 2px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.dates div.full-day,
+.dates div.sunday {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.dates div.half-day {
+    background-color: #FFEB3B;
+    color: black;
+}
+
+.dates div.absent {
+    background-color: #F44336;
+    color: white;
+}
+
+.dates div:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.dates div.empty {
+    cursor: default;
+    background: none;
+}
+
+.tooltip {
+    visibility: hidden;
+    width: 150px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dates div:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+@media (min-width: 1024px) {
+    .container {
+        position: relative;
+        left: 210px;
+        width: calc(140% - 210px);
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        
+        width: 117%;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        
+        width: 117%;
+    }
+}
