@@ -332,38 +332,49 @@ const Dashboard: React.FC = () => {
   }, [token, role, teamMembers]);
 
   const fetchEmployeeDetails = useCallback(async (employeeName: string, start: string, end: string) => {
+    console.log('fetchEmployeeDetails called with:', { employeeName, start, end });
     setIsLoading(true);
     try {
       // First try to find employee in employeeInfo
       const employee = employeeInfo.find(emp => 
         `${emp.firstName} ${emp.lastName}`.toLowerCase() === employeeName.toLowerCase()
       );
+      console.log('Employee from employeeInfo:', employee);
 
       // If not found in employeeInfo, try to find in visits
       const visitEmployee = visits.find(v => 
         `${v.employeeFirstName} ${v.employeeLastName}`.toLowerCase() === employeeName.toLowerCase()
       );
+      console.log('Employee from visits:', visitEmployee);
 
       const employeeId = employee?.id || visitEmployee?.employeeId;
+      console.log('Resolved employeeId:', employeeId);
 
       if (!employeeId) {
         console.error("Employee not found:", employeeName);
+        console.log("Available employees in employeeInfo:", employeeInfo.map(emp => `${emp.firstName} ${emp.lastName}`));
+        console.log("Available employees in visits:", visits.map(v => `${v.employeeFirstName} ${v.employeeLastName}`));
         throw new Error("Employee not found");
       }
 
       console.log("Fetching details for employee:", employeeName, "with ID:", employeeId);
 
-      const response = await fetch(`${API_BASE_URL}/visit/getByDateRangeAndEmployeeStats?id=${employeeId}&start=${start}&end=${end}`, {
+      const url = `${API_BASE_URL}/visit/getByDateRangeAndEmployeeStats?id=${employeeId}&start=${start}&end=${end}`;
+      console.log("Fetching from URL:", url);
+
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
+        console.error(`Failed to fetch employee details: ${response.statusText}`);
         throw new Error(`Failed to fetch employee details: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('Employee details data:', data);
       setEmployeeDetails(data);
     } catch (error) {
       console.error('Error fetching employee details:', error);
@@ -374,13 +385,38 @@ const Dashboard: React.FC = () => {
   }, [token, visits, employeeInfo]);
 
   useEffect(() => {
-    if (view === 'employeeDetails' && employee && queryStartDate && queryEndDate) {
+    if (!router.isReady) return; // Wait for router to be ready
+
+    const { view, employee, state, startDate: queryStartDate, endDate: queryEndDate } = router.query;
+    
+    if (view === 'employeeDetails' && employee && state) {
+      setSelectedState(state as string);
       setSelectedEmployee(employee as string);
-      setStartDate(queryStartDate as string);
-      setEndDate(queryEndDate as string);
-      fetchEmployeeDetails(employee as string, queryStartDate as string, queryEndDate as string);
+      setIsMainDashboard(false);
+      
+      const start = queryStartDate as string || format(new Date(), 'yyyy-MM-dd');
+      const end = queryEndDate as string || format(new Date(), 'yyyy-MM-dd');
+      
+      setStartDate(start);
+      setEndDate(end);
+      
+      if (router.query.selectedOption) {
+        setSelectedOption(router.query.selectedOption as string);
+      } else {
+        setSelectedOption(`${start},${end}`);
+      }
+      
+      if (router.query.currentPage) {
+        setCurrentPage(parseInt(router.query.currentPage as string, 10));
+      }
+      
+      // Fetch employee details after setting all states
+      fetchEmployeeDetails(employee as string, start, end);
+    } else if (state) {
+      setSelectedState(state as string);
+      setIsMainDashboard(false);
     }
-  }, [view, employee, queryStartDate, queryEndDate, fetchEmployeeDetails]);
+  }, [router.isReady, router.query, fetchEmployeeDetails]);
 
   useEffect(() => {
     if (token && role) {
@@ -588,33 +624,13 @@ const Dashboard: React.FC = () => {
   }, [token, startDate, endDate]);
 
   const handleEmployeeClick = useCallback(async (employeeName: string) => {
-    setSelectedEmployee(employeeName.trim().toLowerCase());
     router.push({
-      pathname: '/Dashboard',
+      pathname: `/EmployeeDetailsPage/${encodeURIComponent(employeeName.trim().toLowerCase())}`,
       query: {
         state: selectedState,
-        employee: employeeName.trim().toLowerCase(),
       },
-    }, undefined, { shallow: true });
-
-    fetchEmployeeDetails(employeeName, startDate, endDate);
-    
-    const selectedLocation = employeeLocations.find(loc => 
-      loc.empName.toLowerCase() === employeeName.trim().toLowerCase()
-    );
-    
-    if (selectedLocation) {
-      handleEmployeeLocationClick(selectedLocation);
-    }
-  }, [
-    fetchEmployeeDetails, 
-    router, 
-    selectedState, 
-    startDate, 
-    endDate, 
-    employeeLocations, 
-    handleEmployeeLocationClick
-  ]);
+    });
+  }, [router, selectedState]);
 
   const handleDateRangeChange = useCallback((start: string, end: string, option: string) => {
     setStartDate(start);
@@ -643,16 +659,54 @@ const Dashboard: React.FC = () => {
   ]);
 
   const handleViewDetails = useCallback((visitId: number) => {
+    // Save the current state before navigating
+    const currentState = {
+      returnTo: 'employeeDetails',
+      state: selectedState,
+      employee: selectedEmployee,
+      startDate: startDate,
+      endDate: endDate,
+      selectedOption: selectedOption,
+      currentPage: currentPage
+    };
+
+    // Store the state in localStorage
+    localStorage.setItem('dashboardState', JSON.stringify(currentState));
+
     router.push({
       pathname: `/VisitDetailPage/${visitId}`,
-      query: {
-        returnTo: 'employeeDetails',
-        employeeId: selectedEmployee,
-        startDate: startDate,
-        endDate: endDate,
-      },
+      query: currentState
     });
-  }, [router, selectedEmployee, startDate, endDate]);
+  }, [router, selectedState, selectedEmployee, startDate, endDate, selectedOption, currentPage]);
+
+  // Add a new useEffect to handle return navigation
+  useEffect(() => {
+    if (router.isReady) {
+      const { returnTo } = router.query;
+      
+      if (returnTo === 'employeeDetails') {
+        // Retrieve saved state from localStorage
+        const savedState = localStorage.getItem('dashboardState');
+        if (savedState) {
+          const state = JSON.parse(savedState);
+          setSelectedState(state.state);
+          setSelectedEmployee(state.employee);
+          setStartDate(state.startDate);
+          setEndDate(state.endDate);
+          setSelectedOption(state.selectedOption);
+          setCurrentPage(state.currentPage);
+          
+          // Fetch employee details with saved state
+          if (state.employee) {
+            fetchEmployeeDetails(state.employee, state.startDate, state.endDate);
+          }
+          
+          // Clear the saved state
+          localStorage.removeItem('dashboardState');
+        }
+      }
+    }
+  }, [router.isReady, router.query, fetchEmployeeDetails]);
 
   const getAccessToken = useCallback(async () => {
     try {
@@ -900,6 +954,9 @@ const Dashboard: React.FC = () => {
           .map((response) => response.data)
           .filter(location => location.latitude && location.longitude);
       }
+
+      // Sort locations alphabetically by employee name
+      locations.sort((a, b) => a.empName.localeCompare(b.empName));
 
       setEmployeeLocations(locations);
 
@@ -1650,73 +1707,35 @@ const Dashboard: React.FC = () => {
     <div className="container-dashboard w-full max-w-[100vw] mx-auto py-4 sm:py-8 px-3 sm:px-4 overflow-x-hidden">
       <div className="p-4">
         <div className="flex justify-between items-center mb-6">
-          {selectedState && !selectedEmployee ? (
-            <>
-              <h1 className="text-3xl font-bold capitalize">
-                {selectedState === 'unknown' ? 'Unknown State' : selectedState}
-              </h1>
-              <div className="flex items-center space-x-4">
-                <DateRangeDropdown
-                  selectedOption={selectedOption}
-                  onDateRangeChange={handleDateRangeChange}
-                />
-                <Button variant="outline" size="sm" onClick={handleBackToMainDashboard}>
-                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </div>
-            </>
-          ) : selectedEmployee && employeeDetails ? (
-            <>
-              <h1 className="text-3xl font-bold capitalize">Employee Details</h1>
-              <div className="flex items-center space-x-4">
-                <DateRangeDropdown
-                  selectedOption={selectedOption}
-                  onDateRangeChange={handleDateRangeChange}
-                />
-                <Button variant="outline" size="sm" onClick={handleBackToMainDashboard}>
-                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl sm:text-3xl font-bold">Sales Dashboard</h1>
-              <div className="flex items-center space-x-4">
-                <DateRangeDropdown
-                  selectedOption={selectedOption}
-                  onDateRangeChange={handleDateRangeChange}
-                />
-              </div>
-            </>
-          )}
+          <h1 className="text-2xl sm:text-3xl font-bold">
+            {selectedState ? 
+              (selectedState === 'unknown' ? 'Unknown State' : selectedState) 
+              : 'Sales Dashboard'
+            }
+          </h1>
+          <div className="flex items-center space-x-4">
+            <DateRangeDropdown
+              selectedOption={selectedOption}
+              onDateRangeChange={handleDateRangeChange}
+            />
+            {selectedState && (
+              <Button variant="outline" size="sm" onClick={handleBackToMainDashboard}>
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            )}
+          </div>
         </div>
 
-        {selectedState && !selectedEmployee ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {isLoading ? renderSkeletonCards() : (
-                employeeCards.length > 0 ? employeeCards : 
-                <p className="col-span-full text-center text-muted-foreground">
-                  No employees with completed visits in this date range.
-                </p>
-              )}
-            </div>
-          </>
-        ) : selectedEmployee && employeeDetails ? (
-          <EmployeeDetails
-            employeeDetails={employeeDetails}
-            selectedEmployee={selectedEmployee}
-            setSelectedEmployee={setSelectedEmployee}
-            handleDateRangeChange={handleDateRangeChange}
-            selectedOption={selectedOption}
-            handleViewDetails={handleViewDetails}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            isLoading={isLoading}
-            onBackClick={handleBackToMainDashboard}
-          />
+        {selectedState ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? renderSkeletonCards() : (
+              employeeCards.length > 0 ? employeeCards : 
+              <p className="col-span-full text-center text-muted-foreground">
+                No employees with completed visits in this date range.
+              </p>
+            )}
+          </div>
         ) : (
           <>
             {renderDashboardOverview()}

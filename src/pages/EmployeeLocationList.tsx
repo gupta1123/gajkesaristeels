@@ -36,6 +36,11 @@ const formatDateTime = (date: string, time: string) => {
 };
 
 const EmployeeLocationList: React.FC<EmployeeLocationListProps> = ({ employeeLocations, onEmployeeClick }) => {
+    // Create a sorted copy of the locations array to ensure alphabetical order
+    const sortedLocations = [...employeeLocations].sort((a, b) => 
+        a.empName.localeCompare(b.empName)
+    );
+
     return (
         <Card className="mt-8">
             <CardHeader>
@@ -43,7 +48,7 @@ const EmployeeLocationList: React.FC<EmployeeLocationListProps> = ({ employeeLoc
             </CardHeader>
             <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {employeeLocations.map((location) => (
+                    {sortedLocations.map((location) => (
                         <div
                             key={location.id}
                             className="flex items-center p-4 bg-white rounded-lg shadow-lg transform transition-transform hover:scale-105 cursor-pointer"

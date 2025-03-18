@@ -22,7 +22,7 @@ interface EmployeeCardProps {
     year: number;
     attendanceData: {
         employeeId: number;
-        attendanceStatus: 'full day' | 'half day' | 'Present' | 'Absent';
+        attendanceStatus: 'full day' | 'half day' | 'Absent';
         checkinDate: string;
         checkoutDate: string;
     }[];

@@ -685,7 +685,20 @@ const VisitDetailPage: React.FC = () => {
   };
 
   const handleBack = () => {
-    router.back();
+    if (router.query.returnTo === 'employeeDetails' && router.query.employee) {
+      router.push({
+        pathname: `/EmployeeDetailsPage/${router.query.employee}`,
+        query: {
+          state: router.query.state,
+          startDate: router.query.startDate,
+          endDate: router.query.endDate,
+          selectedOption: router.query.selectedOption || 'Today',
+          currentPage: router.query.currentPage || '1'
+        }
+      });
+    } else {
+      router.back();
+    }
   };
 
   const createTask = async (taskType: string) => {

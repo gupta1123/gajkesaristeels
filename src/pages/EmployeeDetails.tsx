@@ -310,14 +310,33 @@ const EmployeeDetails: React.FC<EmployeeDetailsProps> = ({
     }, [employeeDetails]);
 
     const handleViewDetailsWithRouter = (visitId: number) => {
+        const params = {
+            visitId,
+            returnTo: 'employeeDetails',
+            employeeId: selectedEmployee,
+            startDate: selectedOption.split(',')[0],
+            endDate: selectedOption.split(',')[1],
+            currentPage: currentPage.toString()
+        };
+        
+        console.log('Navigating to VisitDetail with params:', params);
+        
+        // Store the current state in sessionStorage as a backup
+        const dashboardState = {
+            view: 'employeeDetails',
+            employee: selectedEmployee,
+            startDate: selectedOption.split(',')[0],
+            endDate: selectedOption.split(',')[1],
+            selectedOption: selectedOption,
+            currentPage: currentPage.toString()
+        };
+        
+        sessionStorage.setItem('dashboardState', JSON.stringify(dashboardState));
+        console.log('Stored state in sessionStorage:', dashboardState);
+        
         router.push({
             pathname: `/VisitDetailPage/${visitId}`,
-            query: {
-                returnTo: 'employeeDetails',
-                employeeId: selectedEmployee,
-                startDate: selectedOption.split(',')[0],
-                endDate: selectedOption.split(',')[1]
-            }
+            query: params
         });
     };
 
