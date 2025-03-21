@@ -129,7 +129,7 @@ const EmployeeDetailsPage = () => {
     <div className="container-dashboard w-full max-w-[100vw] mx-auto py-4 sm:py-8 px-3 sm:px-4">
       <div className="p-4">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold">Employe Details</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Employee Details</h1>
           <div className="flex items-center space-x-4">
             <DateRangeDropdown
               selectedOption={selectedOption}
