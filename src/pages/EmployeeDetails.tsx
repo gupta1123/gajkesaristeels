@@ -18,7 +18,7 @@ import { ClipLoader } from 'react-spinners';
 import DateRangeDropdown from './DateRangeDropdown';
 import { useRouter } from 'next/router';
 import { Visit } from '@/types/visit';
-
+import './Dashboard.css';
 interface KPICardProps {
     title: string;
     value: number;
