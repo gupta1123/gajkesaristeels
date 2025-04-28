@@ -20,6 +20,7 @@ type Employee = {
 type CustomerTypeData = {
     name: string;
     value: number;
+    rawValue: number;
 };
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -85,7 +86,8 @@ const CustomerTypeAnalysisReport: React.FC = () => {
             const total = Object.values(response.data).reduce((sum, value) => sum + value, 0);
             const formattedData: CustomerTypeData[] = Object.entries(response.data).map(([name, value]) => ({
                 name,
-                value: (value / total) * 100
+                value: total > 0 ? (value / total) * 100 : 0,
+                rawValue: value
             }));
 
             setCustomerTypeData(formattedData);
@@ -148,9 +150,9 @@ const CustomerTypeAnalysisReport: React.FC = () => {
                 />
                 <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
                 <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-                <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" className="text-xs md:text-sm">{`${payload.name}`}</text>
+                <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333" className="text-xs md:text-sm">{`${payload.name} (${payload.rawValue})`}</text>
                 <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999" className="text-xs md:text-sm">
-                    {`${(percent * 100).toFixed(2)}%`}
+                    {`(${(percent * 100).toFixed(1)}%)`}
                 </text>
             </g>
         );
@@ -165,7 +167,7 @@ const CustomerTypeAnalysisReport: React.FC = () => {
             {payload.map((entry, index) => (
                 <li key={`item-${index}`} className="flex items-center">
                     <div className="w-3 h-3 mr-2" style={{ backgroundColor: entry.color }} />
-                    <span>{entry.value}: {entry.payload.value.toFixed(1)}%</span>
+                    <span>{entry.value}: {entry.payload.rawValue} ({entry.payload.value.toFixed(1)}%)</span>
                 </li>
             ))}
         </ul>
@@ -205,7 +207,10 @@ const CustomerTypeAnalysisReport: React.FC = () => {
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        <Tooltip formatter={(value: number, name: string, props: any) => {
+                            const rawValue = props.payload?.rawValue;
+                            return [`${rawValue} (${value.toFixed(1)}%)`, name];
+                        }} />
                         <Legend content={<CustomizedLegend />} verticalAlign="bottom" height={36} />
                     </PieChart>
                 </ResponsiveContainer>
