@@ -1,0 +1,8 @@
+@media (min-width: 1024px) {
+    /* Constrain width similar to SalesPerformanceReport */
+    .container-total-sales-report {
+        width: 80%;
+        /* Position relative might be needed depending on parent layout */
+        position: relative;
+    }
+} 
