@@ -18,6 +18,7 @@ import './EnquiriesPage.css';
 import { useQuery, QueryClient, QueryClientProvider, QueryKey, QueryFunctionContext } from 'react-query';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,14 @@ const formatDateToMMMyy = (date: Date | undefined): string => {
   return date ? format(date, 'MMM-yy') : '';
 };
 
+const formatMonthYearToString = (month: number | undefined, year: number | undefined): string => {
+  if (typeof month === 'number' && typeof year === 'number') {
+    const date = new Date(year, month);
+    return format(date, 'MMM-yy');
+  }
+  return '';
+};
+
 const EnquiriesPageContent: React.FC = () => {
   const token = useSelector((state: RootState) => state.auth.token);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -48,51 +57,52 @@ const EnquiriesPageContent: React.FC = () => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [storeNameFilter, setStoreNameFilter] = useState<string>('');
   const [talukaFilter, setTalukaFilter] = useState<string>('');
-  const [sheetNameFilter, setSheetNameFilter] = useState<string>('');
-  const [fileNameFilter, setFileNameFilter] = useState<string>('');
 
-  const [tempStartDate, setTempStartDate] = useState<Date | undefined>(undefined);
-  const [tempEndDate, setTempEndDate] = useState<Date | undefined>(undefined);
+  const [tempStartMonth, setTempStartMonth] = useState<number | undefined>(undefined);
+  const [tempStartYear, setTempStartYear] = useState<number | undefined>(undefined);
+  const [tempEndMonth, setTempEndMonth] = useState<number | undefined>(undefined);
+  const [tempEndYear, setTempEndYear] = useState<number | undefined>(undefined);
+
   const [tempStoreNameFilter, setTempStoreNameFilter] = useState<string>('');
   const [tempTalukaFilter, setTempTalukaFilter] = useState<string>('');
-  const [tempSheetNameFilter, setTempSheetNameFilter] = useState<string>('');
-  const [tempFileNameFilter, setTempFileNameFilter] = useState<string>('');
+  
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 2000 + 1 }, (_, index) => currentYear - index);
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
   type EnquiryApiQueryKey = [
     string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    string
+    string, // startDate (MMM-yy)
+    string, // endDate (MMM-yy)
+    string, // storeNameFilter
+    string // talukaFilter
   ];
 
   const fetchEnquiries = useCallback(async (context: QueryFunctionContext<EnquiryApiQueryKey>): Promise<Enquiry[]> => {
-    const [_key, startMonth, endMonth, storeName, taluka, sheetName, fileName] = context.queryKey;
+    const [_key, startMonth, endMonth, storeName, taluka] = context.queryKey;
     if (!token) throw new Error('No token available. Please log in.');
 
     const queryParams = new URLSearchParams();
     let baseUrl = 'http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/enquiry/';
 
-    const hasTextFilters = storeName || taluka || sheetName || fileName;
+    const hasAnyFilter = storeName || taluka || startMonth || endMonth;
 
-    if (hasTextFilters) {
+    if (hasAnyFilter) {
       baseUrl += 'filter';
       if (storeName) queryParams.append('storeName', storeName);
       if (taluka) queryParams.append('taluka', taluka);
-      if (sheetName) queryParams.append('sheetName', sheetName);
-      if (fileName) queryParams.append('fileName', fileName);
       if (startMonth) queryParams.append('startMonth', startMonth);
-      if (endMonth) queryParams.append('endMonth', endMonth);
-    } else if (startMonth && endMonth) {
-      baseUrl += 'range';
-      queryParams.append('startMonth', startMonth);
-      queryParams.append('endMonth', endMonth);
+      if (endMonth && startMonth) queryParams.append('endMonth', endMonth);
+      else if (endMonth && !startMonth) {
+        queryParams.append('endMonth', endMonth);
+      }
     } else {
       baseUrl += 'getAll';
     }
@@ -111,12 +121,10 @@ const EnquiriesPageContent: React.FC = () => {
 
   const { data: enquiriesDataFromApi, isLoading, isError, error, refetch } = useQuery<Enquiry[], Error, Enquiry[], EnquiryApiQueryKey>(
     ['enquiriesApi', 
-      formatDateToMMMyy(startDate), 
-      formatDateToMMMyy(endDate),
+      startDate,
+      endDate,
       storeNameFilter,
-      talukaFilter,
-      sheetNameFilter,
-      fileNameFilter
+      talukaFilter
     ],
     fetchEnquiries,
     {
@@ -173,30 +181,27 @@ const EnquiriesPageContent: React.FC = () => {
   };
 
   const handleApplyFilters = () => {
-    setStartDate(tempStartDate);
-    setEndDate(tempEndDate);
+    setStartDate(formatMonthYearToString(tempStartMonth, tempStartYear));
+    setEndDate(formatMonthYearToString(tempEndMonth, tempEndYear));
     setStoreNameFilter(tempStoreNameFilter);
     setTalukaFilter(tempTalukaFilter);
-    setSheetNameFilter(tempSheetNameFilter);
-    setFileNameFilter(tempFileNameFilter);
   };
 
   const handleClearFilters = () => {
-    setTempStartDate(undefined);
-    setTempEndDate(undefined);
+    setTempStartMonth(undefined);
+    setTempStartYear(undefined);
+    setTempEndMonth(undefined);
+    setTempEndYear(undefined);
     setTempStoreNameFilter('');
     setTempTalukaFilter('');
-    setTempSheetNameFilter('');
-    setTempFileNameFilter('');
-    setStartDate(undefined);
-    setEndDate(undefined);
+    
+    setStartDate('');
+    setEndDate('');
     setStoreNameFilter('');
     setTalukaFilter('');
-    setSheetNameFilter('');
-    setFileNameFilter('');
   };
 
-  const baseDisplayColumns = ['Sheet Name', 'File Name', 'Taluka', 'Population', 'Store Name', 'Expenses', 'Phone'];
+  const baseDisplayColumns = ['Taluka', 'Population', 'Store Name', 'Expenses', 'Phone'];
   const salesMonths = React.useMemo(() => {
     const months = new Set<string>();
     filteredEnquiries.forEach((enquiry: Enquiry) => {
@@ -238,8 +243,6 @@ const EnquiriesPageContent: React.FC = () => {
           <TableBody>
             {filteredEnquiries.map((enquiry: Enquiry) => (
               <TableRow key={enquiry.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                <TableCell className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{enquiry.sheetName}</TableCell>
-                <TableCell className="px-6 py-4">{enquiry.fileName}</TableCell>
                 <TableCell className="px-6 py-4">{enquiry.taluka}</TableCell>
                 <TableCell className="px-6 py-4">{enquiry.population}</TableCell>
                 <TableCell className="px-6 py-4">{enquiry.dealerName}</TableCell>
@@ -321,76 +324,92 @@ const EnquiriesPageContent: React.FC = () => {
               className="h-9 w-full"
             />
           </div>
-          <div>
-            <label htmlFor="sheetNameFilter" className="block text-sm font-medium text-gray-700 mb-1">Sheet Name</label>
-            <Input 
-              id="sheetNameFilter"
-              type="text" 
-              placeholder="Enter Sheet Name"
-              value={tempSheetNameFilter} 
-              onChange={(e) => setTempSheetNameFilter(e.target.value)} 
-              className="h-9 w-full"
-            />
-          </div>
-          <div>
-            <label htmlFor="fileNameFilter" className="block text-sm font-medium text-gray-700 mb-1">File Name</label>
-            <Input 
-              id="fileNameFilter"
-              type="text" 
-              placeholder="Enter File Name"
-              value={tempFileNameFilter} 
-              onChange={(e) => setTempFileNameFilter(e.target.value)} 
-              className="h-9 w-full"
-            />
-          </div>
           
           <div>
-            <label htmlFor="fromDateFilter" className="block text-sm font-medium text-gray-700 mb-1">From Date </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="fromDateFilter"
-                  variant={"outline"}
-                  className={`h-9 w-full justify-start text-left font-normal ${!tempStartDate && "text-muted-foreground"}`}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {tempStartDate ? formatDateToMMMyy(tempStartDate) : <span>Pick a start date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="single"
-                  selected={tempStartDate}
-                  onSelect={setTempStartDate}
-                />
-              </PopoverContent>
-            </Popover>
+            <label htmlFor="fromYearFilter" className="block text-sm font-medium text-gray-700 mb-1">From Year</label>
+            <Select
+              value={tempStartYear?.toString()}
+              onValueChange={(value) => {
+                if (value === "NONE_VALUE") setTempStartYear(undefined);
+                else setTempStartYear(value ? parseInt(value) : undefined);
+              }}
+            >
+              <SelectTrigger className="h-9 w-full">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE_VALUE"><em>None</em></SelectItem>
+                {years.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <label htmlFor="toDateFilter" className="block text-sm font-medium text-gray-700 mb-1">To Date </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="toDateFilter"
-                  variant={"outline"}
-                  className={`h-9 w-full justify-start text-left font-normal ${!tempEndDate && "text-muted-foreground"}`}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {tempEndDate ? formatDateToMMMyy(tempEndDate) : <span>Pick an end date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="single"
-                  selected={tempEndDate}
-                  onSelect={setTempEndDate}
-                  disabled={(date) => tempStartDate ? date < tempStartDate : false}
-                />
-              </PopoverContent>
-            </Popover>
+            <label htmlFor="fromMonthFilter" className="block text-sm font-medium text-gray-700 mb-1">From Month</label>
+            <Select
+              value={tempStartMonth?.toString()}
+              onValueChange={(value) => {
+                if (value === "NONE_VALUE") setTempStartMonth(undefined);
+                else setTempStartMonth(value ? parseInt(value) : undefined);
+              }}
+              disabled={!tempStartYear}
+            >
+              <SelectTrigger className="h-9 w-full">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                 <SelectItem value="NONE_VALUE"><em>None</em></SelectItem>
+                {months.map((month, index) => (
+                  <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label htmlFor="toYearFilter" className="block text-sm font-medium text-gray-700 mb-1">To Year</label>
+            <Select
+              value={tempEndYear?.toString()}
+              onValueChange={(value) => {
+                if (value === "NONE_VALUE") setTempEndYear(undefined);
+                else setTempEndYear(value ? parseInt(value) : undefined);
+              }}
+              disabled={!tempStartYear || typeof tempStartMonth !== 'number'}
+            >
+              <SelectTrigger className="h-9 w-full">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE_VALUE"><em>None</em></SelectItem>
+                {years.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label htmlFor="toMonthFilter" className="block text-sm font-medium text-gray-700 mb-1">To Month</label>
+            <Select
+              value={tempEndMonth?.toString()}
+              onValueChange={(value) => {
+                if (value === "NONE_VALUE") setTempEndMonth(undefined);
+                else setTempEndMonth(value ? parseInt(value) : undefined);
+              }}
+              disabled={!tempEndYear}
+            >
+              <SelectTrigger className="h-9 w-full">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NONE_VALUE"><em>None</em></SelectItem>
+                {months.map((month, index) => (
+                  <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex gap-2 items-end sm:col-span-2 md:col-span-1 lg:col-span-1 xl:col-span-1 justify-start pt-5">

@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import dayjs from 'dayjs'; // For formatting dates
 import Link from 'next/link'; // Added for navigation
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'; // Added import
+import { Input } from "@/components/ui/input"
 
 // === API Response Interfaces ===
 interface AttendanceStats {
@@ -135,6 +136,7 @@ const FieldOfficerVisitReport: React.FC = () => {
     const [detailsLoading, setDetailsLoading] = useState<boolean>(false);
     const [detailsError, setDetailsError] = useState<string | null>(null);
     const [selectedCustomerTypeForDetails, setSelectedCustomerTypeForDetails] = useState<string | null>(null);
+    const [employeeSearchTerm, setEmployeeSearchTerm] = useState<string>(""); // New state for search
 
     useEffect(() => {
         const fetchAllEmployeeData = async () => {
@@ -154,10 +156,19 @@ const FieldOfficerVisitReport: React.FC = () => {
                 const allEmployees: Employee[] = await allEmployeesResponse.json();
                 const inactiveEmployees: Employee[] = await inactiveEmployeesResponse.json();
                 const inactiveEmployeeIds = new Set(inactiveEmployees.map(emp => emp.id));
-                const activeFieldOfficers = allEmployees.filter(emp => emp.role === 'Field Officer' && !inactiveEmployeeIds.has(emp.id));
+                const activeFieldOfficers = allEmployees
+                    .filter(emp => emp.role === 'Field Officer' && !inactiveEmployeeIds.has(emp.id))
+                    .sort((a, b) => {
+                        const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+                        const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+                        if (nameA < nameB) return -1;
+                        if (nameA > nameB) return 1;
+                        return 0;
+                    });
                 setFieldOfficers(activeFieldOfficers);
-                if (activeFieldOfficers.length > 0) setSelectedEmployeeId(activeFieldOfficers[0].id.toString());
-                else setSelectedEmployeeId('');
+                if (activeFieldOfficers.length > 0 && !selectedEmployeeId) {
+                    setSelectedEmployeeId(activeFieldOfficers[0].id.toString());
+                }
             } catch (err: any) {
                 setEmployeesError(err.message || 'Could not fetch employee data.');
                 setFieldOfficers([]);
@@ -318,6 +329,10 @@ const FieldOfficerVisitReport: React.FC = () => {
     
     const selectedEmployeeName = fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId)?.firstName + ' ' + fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId)?.lastName || "Select Field Officer";
 
+    const filteredFieldOfficers = fieldOfficers.filter(officer => 
+        `${officer.firstName} ${officer.lastName}`.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+    );
+
     return (
         <Card className="shadow-lg">
             <CardHeader>
@@ -325,174 +340,195 @@ const FieldOfficerVisitReport: React.FC = () => {
             </CardHeader>
             <CardContent className="p-6">
                 <div className="controls bg-gray-100 p-4 rounded-lg mb-6 flex flex-wrap items-center gap-4 justify-center">
-                    <div>
-                        <label htmlFor="employeeSelectTrigger" className="block text-sm font-medium text-gray-700 mb-1">Field Officer:</label>
-                        {employeesLoading ? <div className="flex items-center justify-center min-w-[200px] h-[42px]"><ClipLoader size={24} color="#4A90E2"/></div>
-                            : employeesError ? <div className="text-red-500 text-sm min-w-[200px]">Error loading.</div>
-                            : <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" id="employeeSelectTrigger" className="min-w-[200px] h-[42px] justify-between text-sm">
-                                        {selectedEmployeeId && fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId) ? `${fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId)?.firstName} ${fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId)?.lastName}` : "Select Field Officer"}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="min-w-[200px]">
-                                    <DropdownMenuRadioGroup value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                                        {fieldOfficers.length === 0 ? <DropdownMenuRadioItem value="" disabled>No active field officers</DropdownMenuRadioItem>
-                                            : fieldOfficers.map(officer => (
-                                                <DropdownMenuRadioItem key={officer.id} value={officer.id.toString()}>
-                                                    {`${officer.firstName} ${officer.lastName}`}
-                                                </DropdownMenuRadioItem>
-                                            ))}
-                                    </DropdownMenuRadioGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>}
-                    </div>
-
-                    <div>
-                        <label htmlFor="rangeSelectTrigger" className="block text-sm font-medium text-gray-700 mb-1">Date Range:</label>
-                        <Select value={rangeSelect} onValueChange={(value) => { setRangeSelect(value); if (value !== 'custom') { /* Date inputs disabled by effect */ } }}>
-                            <SelectTrigger id="rangeSelectTrigger" className="min-w-[180px] h-[42px] text-sm">
-                                <SelectValue placeholder="Select Range" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="custom">Custom</SelectItem>
-                                <SelectItem value="last-7-days">Last 7 Days</SelectItem>
-                                <SelectItem value="last-15-days">Last 15 Days</SelectItem>
-                                <SelectItem value="last-30-days">Last 30 Days</SelectItem>
-                                <SelectItem value="last-week">Last Week</SelectItem>
-                                <SelectItem value="last-month">Last Month</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div>
-                        <label htmlFor="startDateTrigger" className="block text-sm font-medium text-gray-700 mb-1">From:</label>
-                        <Popover open={isStartDatePopoverOpen} onOpenChange={setIsStartDatePopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    id="startDateTrigger"
-                                    variant={"outline"}
-                                    className={cn("min-w-[180px] h-[42px] justify-start text-left font-normal text-sm", !startDate && "text-muted-foreground", rangeSelect !== '' && "bg-gray-200 cursor-not-allowed")}
-                                    disabled={rangeSelect !== ''}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {startDate ? dayjs(startDate).format('MMM D, YYYY') : <span>Pick a date</span>}
+                <div>
+                    <label htmlFor="employeeSelectTrigger" className="block text-sm font-medium text-gray-700 mb-1">Field Officer:</label>
+                    {employeesLoading ? <div className="flex items-center justify-center min-w-[200px] h-[42px]"><ClipLoader size={24} color="#4A90E2"/></div>
+                        : employeesError ? <div className="text-red-500 text-sm min-w-[200px]">Error loading.</div>
+                        : <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" id="employeeSelectTrigger" className="min-w-[200px] h-[42px] justify-between text-sm">
+                                    {selectedEmployeeId && fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId) ? `${fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId)?.firstName} ${fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId)?.lastName}` : "Select Field Officer"}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={startDate ? dayjs(startDate).toDate() : undefined}
-                                    onSelect={handleStartDateSelect}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-
-                    <div>
-                        <label htmlFor="endDateTrigger" className="block text-sm font-medium text-gray-700 mb-1">To:</label>
-                        <Popover open={isEndDatePopoverOpen} onOpenChange={setIsEndDatePopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    id="endDateTrigger"
-                                    variant={"outline"}
-                                    className={cn("min-w-[180px] h-[42px] justify-start text-left font-normal text-sm", !endDate && "text-muted-foreground", rangeSelect !== '' && "bg-gray-200 cursor-not-allowed")}
-                                    disabled={rangeSelect !== ''}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {endDate ? dayjs(endDate).format('MMM D, YYYY') : <span>Pick a date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={endDate ? dayjs(endDate).toDate() : undefined}
-                                    onSelect={handleEndDateSelect}
-                                    disabled={startDate ? { before: dayjs(startDate).toDate() } : undefined}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-
-                    <button
-                        id="filterBtn"
-                        onClick={handleGenerateReport}
-                        className="fo-button self-end h-[42px] whitespace-nowrap"
-                        disabled={reportLoading || fieldOfficers.length === 0 || !selectedEmployeeId || !startDate || !endDate}
-                    >
-                        {reportLoading ? 'Generating...' : 'Generate Report'}
-                    </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="min-w-[200px]">
+                                <div className="p-2">
+                                    <Input 
+                                        placeholder="Search officer..."
+                                        value={employeeSearchTerm}
+                                        onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                                        className="w-full mb-2 h-8"
+                                    />
+                                </div>
+                                <DropdownMenuRadioGroup value={selectedEmployeeId} onValueChange={(value) => {
+                                    setSelectedEmployeeId(value);
+                                    setEmployeeSearchTerm(""); // Clear search on selection
+                                }}>
+                                    {filteredFieldOfficers.length === 0 ? (
+                                        <DropdownMenuRadioItem value="" disabled>
+                                            No matching officers
+                                        </DropdownMenuRadioItem>
+                                    ) : filteredFieldOfficers.map(officer => (
+                                        <DropdownMenuRadioItem key={officer.id} value={officer.id.toString()}>
+                                            {`${officer.firstName} ${officer.lastName}`}
+                                        </DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>}
                 </div>
 
-                {reportLoading && <div className="flex justify-center items-center p-10"><ClipLoader color="#4A90E2" size={50} /></div>}
-                {reportError && <div className="text-center p-4 my-4 text-red-700 bg-red-100 border border-red-400 rounded"><p><strong>Error:</strong> {reportError}</p></div>}
-                {showReport && !reportLoading && !reportError && (
-                    <div id="reportSection" className="mt-6">
-                        <table id="summaryTable" className="fo-table w-full">
-                            <thead id="summaryHead">{summaryHeader}</thead>
-                            <tbody><tr id="summaryRow">{summaryRow}</tr></tbody>
-                        </table>
-                    </div>
-                )}
+                <div>
+                    <label htmlFor="rangeSelectTrigger" className="block text-sm font-medium text-gray-700 mb-1">Date Range:</label>
+                    <Select value={rangeSelect} onValueChange={(value) => { 
+                        setRangeSelect(value); 
+                        if (value === 'custom') {
+                            setStartDate('');
+                            setEndDate('');
+                        }
+                        // Predefined ranges will be handled by the useEffect dependent on rangeSelect
+                    }}>
+                        <SelectTrigger id="rangeSelectTrigger" className="min-w-[180px] h-[42px] text-sm">
+                            <SelectValue placeholder="Select Range" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="custom">Custom</SelectItem>
+                            <SelectItem value="last-7-days">Last 7 Days</SelectItem>
+                            <SelectItem value="last-15-days">Last 15 Days</SelectItem>
+                            <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+                            <SelectItem value="last-week">Last Week</SelectItem>
+                            <SelectItem value="last-month">Last Month</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-                {/* Section for Visit Details */}
-                {selectedCustomerTypeForDetails && (
+                <div>
+                    <label htmlFor="startDateTrigger" className="block text-sm font-medium text-gray-700 mb-1">From:</label>
+                    <Popover open={isStartDatePopoverOpen} onOpenChange={setIsStartDatePopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                id="startDateTrigger"
+                                variant={"outline"}
+                                className={cn("min-w-[180px] h-[42px] justify-start text-left font-normal text-sm", !startDate && "text-muted-foreground", rangeSelect !== 'custom' && rangeSelect !== '' && "bg-gray-200 cursor-not-allowed")}
+                                disabled={rangeSelect !== 'custom' && rangeSelect !== ''}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {startDate ? dayjs(startDate).format('MMM D, YYYY') : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={startDate ? dayjs(startDate).toDate() : undefined}
+                                onSelect={handleStartDateSelect}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+
+                <div>
+                    <label htmlFor="endDateTrigger" className="block text-sm font-medium text-gray-700 mb-1">To:</label>
+                    <Popover open={isEndDatePopoverOpen} onOpenChange={setIsEndDatePopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                id="endDateTrigger"
+                                variant={"outline"}
+                                className={cn("min-w-[180px] h-[42px] justify-start text-left font-normal text-sm", !endDate && "text-muted-foreground", rangeSelect !== 'custom' && rangeSelect !== '' && "bg-gray-200 cursor-not-allowed")}
+                                disabled={rangeSelect !== 'custom' && rangeSelect !== ''}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {endDate ? dayjs(endDate).format('MMM D, YYYY') : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={endDate ? dayjs(endDate).toDate() : undefined}
+                                onSelect={handleEndDateSelect}
+                                disabled={startDate ? { before: dayjs(startDate).toDate() } : undefined}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+
+                <button
+                    id="filterBtn"
+                    onClick={handleGenerateReport}
+                    className="fo-button self-end h-[42px] whitespace-nowrap"
+                    disabled={reportLoading || fieldOfficers.length === 0 || !selectedEmployeeId || !startDate || !endDate}
+                >
+                    {reportLoading ? 'Generating...' : 'Generate Report'}
+                </button>
+            </div>
+
+            {reportLoading && <div className="flex justify-center items-center p-10"><ClipLoader color="#4A90E2" size={50} /></div>}
+            {reportError && <div className="text-center p-4 my-4 text-red-700 bg-red-100 border border-red-400 rounded"><p><strong>Error:</strong> {reportError}</p></div>}
+            {showReport && !reportLoading && !reportError && (
+                    <div id="reportSection" className="mt-6">
+                    <table id="summaryTable" className="fo-table w-full">
+                        <thead id="summaryHead">{summaryHeader}</thead>
+                        <tbody><tr id="summaryRow">{summaryRow}</tr></tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Section for Visit Details */}
+            {selectedCustomerTypeForDetails && (
                      <div id="visitDetailsSection" className="mt-8">
-                        <h2 className="text-xl font-semibold mb-4 text-gray-700">
-                            Visit Details for {selectedCustomerTypeForDetails}
-                            {selectedEmployeeName !== "Select Field Officer" && ` (Officer: ${selectedEmployeeName}, Dates: ${dayjs(startDate).format('MMM D, YYYY')} - ${dayjs(endDate).format('MMM D, YYYY')})`}
-                        </h2>
-                        {detailsLoading && <div className="flex justify-center items-center p-10"><ClipLoader color="#4A90E2" size={40} /></div>}
-                        {detailsError && <div className="text-center p-4 my-4 text-red-600 bg-red-50 border border-red-300 rounded"><p><strong>Error:</strong> {detailsError}</p></div>}
-                        {!detailsLoading && !detailsError && visitDetails && (
-                            visitDetails.length > 0 ? (
-                                <div className="overflow-x-auto">
-                                    <table className="fo-table w-full text-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Customer Name</th>
-                                                <th>City</th>
-                                                <th>Taluka</th>
-                                                <th>State</th>
-                                                <th>Last Visited</th>
-                                                <th>Visit Count</th>
-                                                <th>Avg Monthly Sales</th>
-                                                <th>Avg Intent Level</th>
-                                                <th>Customer Type</th>
+                    <h2 className="text-xl font-semibold mb-4 text-gray-700">
+                        Visit Details for {selectedCustomerTypeForDetails}
+                        {selectedEmployeeName !== "Select Field Officer" && ` (Officer: ${selectedEmployeeName}, Dates: ${dayjs(startDate).format('MMM D, YYYY')} - ${dayjs(endDate).format('MMM D, YYYY')})`}
+                    </h2>
+                    {detailsLoading && <div className="flex justify-center items-center p-10"><ClipLoader color="#4A90E2" size={40} /></div>}
+                    {detailsError && <div className="text-center p-4 my-4 text-red-600 bg-red-50 border border-red-300 rounded"><p><strong>Error:</strong> {detailsError}</p></div>}
+                    {!detailsLoading && !detailsError && visitDetails && (
+                        visitDetails.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <table className="fo-table w-full text-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Customer Name</th>
+                                            <th>City</th>
+                                            <th>Taluka</th>
+                                            <th>State</th>
+                                            <th>Last Visited</th>
+                                            <th>Visit Count</th>
+                                            <th>Avg Monthly Sales</th>
+                                            <th>Avg Intent Level</th>
+                                            <th>Customer Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {visitDetails.map((detail, index) => (
+                                            <tr key={index}>
+                                                <td>
+                                                    <Link href={`/CustomerDetailPage/${detail.storeId}`} legacyBehavior>
+                                                        <a className="text-blue-600 hover:text-blue-800 hover:underline">
+                                                            {detail.customerName}
+                                                        </a>
+                                                    </Link>
+                                                </td>
+                                                <td>{detail.city}</td>
+                                                <td>{detail.taluka}</td>
+                                                <td>{detail.state}</td>
+                                                <td>{dayjs(detail.lastVisited).format('MMM D, YYYY')}</td>
+                                                <td>{detail.visitCount}</td>
+                                                <td>{detail.avgMonthlySales}</td>
+                                                <td>{detail.avgIntentLevel}</td>
+                                                <td>{detail.customerType}</td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {visitDetails.map((detail, index) => (
-                                                <tr key={index}>
-                                                    <td>
-                                                        <Link href={`/CustomerDetailPage/${detail.storeId}`} legacyBehavior>
-                                                            <a className="text-blue-600 hover:text-blue-800 hover:underline">
-                                                                {detail.customerName}
-                                                            </a>
-                                                        </Link>
-                                                    </td>
-                                                    <td>{detail.city}</td>
-                                                    <td>{detail.taluka}</td>
-                                                    <td>{detail.state}</td>
-                                                    <td>{dayjs(detail.lastVisited).format('MMM D, YYYY')}</td>
-                                                    <td>{detail.visitCount}</td>
-                                                    <td>{detail.avgMonthlySales}</td>
-                                                    <td>{detail.avgIntentLevel}</td>
-                                                    <td>{detail.customerType}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                <p className="text-center text-gray-600 py-4">No visit details found for {selectedCustomerTypeForDetails}.</p>
-                            )
-                        )}
-                    </div>
-                )}
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-600 py-4">No visit details found for {selectedCustomerTypeForDetails}.</p>
+                        )
+                    )}
+                </div>
+            )}
             </CardContent>
         </Card>
     );
