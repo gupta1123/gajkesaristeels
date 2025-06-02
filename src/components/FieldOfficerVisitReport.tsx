@@ -537,23 +537,10 @@ const FieldOfficerVisitReport: React.FC = () => {
                                         {visitDetails
                                             .slice() // copy to avoid mutating state
                                             .sort((a, b) => {
-                                                const stateA = a.state?.toLowerCase() || '';
-                                                const stateB = b.state?.toLowerCase() || '';
-                                                if (stateA < stateB) return -1;
-                                                if (stateA > stateB) return 1;
-                                                const cityA = a.city?.toLowerCase() || '';
-                                                const cityB = b.city?.toLowerCase() || '';
-                                                if (cityA < cityB) return -1;
-                                                if (cityA > cityB) return 1;
-                                                const talukaA = a.taluka?.toLowerCase() || '';
-                                                const talukaB = b.taluka?.toLowerCase() || '';
-                                                if (talukaA < talukaB) return -1;
-                                                if (talukaA > talukaB) return 1;
-                                                const nameA = a.customerName?.toLowerCase() || '';
-                                                const nameB = b.customerName?.toLowerCase() || '';
-                                                if (nameA < nameB) return -1;
-                                                if (nameA > nameB) return 1;
-                                                return 0;
+                                                // Sort by lastVisited, latest to oldest
+                                                const dateA = new Date(a.lastVisited).getTime();
+                                                const dateB = new Date(b.lastVisited).getTime();
+                                                return dateB - dateA;
                                             })
                                             .map((detail, index) => (
                                                 <tr key={index}>
@@ -569,7 +556,15 @@ const FieldOfficerVisitReport: React.FC = () => {
                                                     <td>{detail.state}</td>
                                                     <td>{dayjs(detail.lastVisited).format('MMM D, YYYY')}</td>
                                                     <td>{detail.visitCount}</td>
-                                                    <td>{formatSalesNumber(detail.avgMonthlySales)}</td>
+                                                    <td>{
+                                                        (() => {
+                                                            const val = detail.avgMonthlySales;
+                                                            if (val % 1 === 0) return formatSalesNumber(val);
+                                                            // Show 1 decimal, rounded
+                                                            const rounded = Math.round(val * 10) / 10;
+                                                            return formatSalesNumber(rounded);
+                                                        })()
+                                                    }</td>
                                                     <td>{Number.isInteger(detail.avgIntentLevel) ? detail.avgIntentLevel : detail.avgIntentLevel.toFixed(1)}</td>
                                                     <td>{detail.customerType}</td>
                                                 </tr>
