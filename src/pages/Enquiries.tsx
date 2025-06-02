@@ -122,7 +122,7 @@ const EnquiriesPageContent: React.FC = () => {
     if (!token) throw new Error('No token available. Please log in.');
 
     const queryParams = new URLSearchParams();
-    const baseUrl = 'http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/enquiry/filtered'; 
+    const baseUrl = 'https://api.gajkesaristeels.in/enquiry/filtered';
 
     if (storeName) queryParams.append('storeName', storeName);
     if (taluka) queryParams.append('taluka', taluka);
@@ -204,7 +204,7 @@ const EnquiriesPageContent: React.FC = () => {
     const formData = new FormData();
     formData.append('file', selectedFile);
     try {
-      const response = await fetch('http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/enquiry/upload', {
+      const response = await fetch('https://api.gajkesaristeels.in/enquiry/upload', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
