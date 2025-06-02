@@ -106,6 +106,22 @@ interface VisitDetail {
     storeId: number; 
 }
 
+const formatSalesNumber = (num: number): string => {
+    if (num >= 10000000) { // Crores
+        const val = num / 10000000;
+        return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + 'Cr';
+    }
+    if (num >= 100000) { // Lakhs
+        const val = num / 100000;
+        return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + 'L';
+    }
+    if (num >= 1000) { // Thousands
+        const val = num / 1000;
+        return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + 'K';
+    }
+    return num.toString();
+};
+
 const FieldOfficerVisitReport: React.FC = () => {
     const token = useSelector((state: RootState) => state.auth.token);
 
@@ -135,6 +151,7 @@ const FieldOfficerVisitReport: React.FC = () => {
     const [selectedCustomerTypeForDetails, setSelectedCustomerTypeForDetails] = useState<string | null>(null);
     const [employeeSearchTerm, setEmployeeSearchTerm] = useState<string>(""); // New state for search
     const searchInputRef = React.useRef<HTMLInputElement>(null); // Added ref for search input
+    const [dateRangeError, setDateRangeError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchAllEmployeeData = async () => {
@@ -231,9 +248,16 @@ const FieldOfficerVisitReport: React.FC = () => {
     };
 
     const handleGenerateReport = async () => {
-        if (!selectedEmployeeId || !startDate || !endDate) {
-            alert('Select an officer and both dates.'); return;
+        if (!rangeSelect) {
+            setDateRangeError('Please select a Date Range.');
+            return;
         }
+        if (!selectedEmployeeId || !startDate || !endDate) {
+            setDateRangeError(null);
+            alert('Select an officer and both dates.');
+            return;
+        }
+        setDateRangeError(null);
         setReportLoading(true); setReportError(null); setShowReport(false);
         try {
             const url = `https://api.gajkesaristeels.in/visit/field-officer-stats?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}`;
@@ -386,6 +410,7 @@ const FieldOfficerVisitReport: React.FC = () => {
                     <label htmlFor="rangeSelectTrigger" className="block text-sm font-medium text-gray-700 mb-1">Date Range:</label>
                     <Select value={rangeSelect} onValueChange={(value) => { 
                         setRangeSelect(value); 
+                        setDateRangeError(null); // Clear error on change
                         if (value === 'custom') {
                             setStartDate('');
                             setEndDate('');
@@ -466,6 +491,12 @@ const FieldOfficerVisitReport: React.FC = () => {
                 </button>
             </div>
 
+            {dateRangeError && (
+                <div className="text-center p-2 my-2 text-red-700 bg-red-100 border border-red-400 rounded">
+                    {dateRangeError}
+                </div>
+            )}
+
             {reportLoading && <div className="flex justify-center items-center p-10"><ClipLoader color="#4A90E2" size={50} /></div>}
             {reportError && <div className="text-center p-4 my-4 text-red-700 bg-red-100 border border-red-400 rounded"><p><strong>Error:</strong> {reportError}</p></div>}
             {showReport && !reportLoading && !reportError && (
@@ -503,25 +534,46 @@ const FieldOfficerVisitReport: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {visitDetails.map((detail, index) => (
-                                            <tr key={index}>
-                                                <td>
-                                                    <Link href={`/CustomerDetailPage/${detail.storeId}`} legacyBehavior>
-                                                        <a className="text-blue-600 hover:text-blue-800 hover:underline">
-                                                            {detail.customerName}
-                                                        </a>
-                                                    </Link>
-                                                </td>
-                                                <td>{detail.city}</td>
-                                                <td>{detail.taluka}</td>
-                                                <td>{detail.state}</td>
-                                                <td>{dayjs(detail.lastVisited).format('MMM D, YYYY')}</td>
-                                                <td>{detail.visitCount}</td>
-                                                <td>{detail.avgMonthlySales}</td>
-                                                <td>{detail.avgIntentLevel}</td>
-                                                <td>{detail.customerType}</td>
-                                            </tr>
-                                        ))}
+                                        {visitDetails
+                                            .slice() // copy to avoid mutating state
+                                            .sort((a, b) => {
+                                                const stateA = a.state?.toLowerCase() || '';
+                                                const stateB = b.state?.toLowerCase() || '';
+                                                if (stateA < stateB) return -1;
+                                                if (stateA > stateB) return 1;
+                                                const cityA = a.city?.toLowerCase() || '';
+                                                const cityB = b.city?.toLowerCase() || '';
+                                                if (cityA < cityB) return -1;
+                                                if (cityA > cityB) return 1;
+                                                const talukaA = a.taluka?.toLowerCase() || '';
+                                                const talukaB = b.taluka?.toLowerCase() || '';
+                                                if (talukaA < talukaB) return -1;
+                                                if (talukaA > talukaB) return 1;
+                                                const nameA = a.customerName?.toLowerCase() || '';
+                                                const nameB = b.customerName?.toLowerCase() || '';
+                                                if (nameA < nameB) return -1;
+                                                if (nameA > nameB) return 1;
+                                                return 0;
+                                            })
+                                            .map((detail, index) => (
+                                                <tr key={index}>
+                                                    <td>
+                                                        <Link href={`/CustomerDetailPage/${detail.storeId}`} legacyBehavior>
+                                                            <a className="text-blue-600 hover:text-blue-800 hover:underline">
+                                                                {detail.customerName}
+                                                            </a>
+                                                        </Link>
+                                                    </td>
+                                                    <td>{detail.city}</td>
+                                                    <td>{detail.taluka}</td>
+                                                    <td>{detail.state}</td>
+                                                    <td>{dayjs(detail.lastVisited).format('MMM D, YYYY')}</td>
+                                                    <td>{detail.visitCount}</td>
+                                                    <td>{formatSalesNumber(detail.avgMonthlySales)}</td>
+                                                    <td>{Number.isInteger(detail.avgIntentLevel) ? detail.avgIntentLevel : detail.avgIntentLevel.toFixed(1)}</td>
+                                                    <td>{detail.customerType}</td>
+                                                </tr>
+                                            ))}
                                     </tbody>
                                 </table>
                             </div>
