@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '../store'; // Assuming your store is setup for RootState
+import { RootState } from '../store'; 
 import './FieldOfficerVisitReport.css';
-import { ClipLoader } from 'react-spinners'; // For loading state
+import { ClipLoader } from 'react-spinners'; 
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -10,13 +10,13 @@ import {
     DropdownMenuRadioGroup,
     DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button'; // For DropdownMenuTrigger styling
+import { Button } from '@/components/ui/button'; 
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
+    SelectValue
 } from "@/components/ui/select"
 import {
     Popover,
@@ -24,14 +24,14 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from '@radix-ui/react-icons'; // Or your preferred calendar icon
+import { CalendarIcon } from '@radix-ui/react-icons'; 
 import { cn } from "@/lib/utils";
-import dayjs from 'dayjs'; // For formatting dates
-import Link from 'next/link'; // Added for navigation
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'; // Added import
+import dayjs from 'dayjs'; 
+import Link from 'next/link'; 
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'; 
 import { Input } from "@/components/ui/input"
 
-// === API Response Interfaces ===
+
 interface AttendanceStats {
     absences: number;
     halfDays: number;
@@ -39,7 +39,7 @@ interface AttendanceStats {
 }
 
 interface VisitsByCustomerType {
-    [key: string]: number; // e.g., "shop": 45, "site visit": 3
+    [key: string]: number; 
 }
 
 interface FieldOfficerStatsResponse {
@@ -68,7 +68,7 @@ interface Employee {
     secondaryContact?: number;
     departmentName: string;
     email: string;
-    role: string; // Important for filtering "Field Officer"
+    role: string; 
     addressLine1: string;
     addressLine2?: string;
     city: string;
@@ -89,21 +89,21 @@ interface Employee {
     companyId?: string | null;
     companyName?: string | null;
     fullMonthSalary?: number | null;
-    status?: string | null; // 'inactive' or other statuses
+    status?: string | null; 
 }
 
-// === Visit Details API Response Interface ===
+
 interface VisitDetail {
     avgIntentLevel: number;
     avgMonthlySales: number;
     visitCount: number;
-    lastVisited: string; // "YYYY-MM-DD"
+    lastVisited: string; 
     city: string;
     taluka: string;
     state: string;
     customerName: string;
-    customerType: string; // Added to show original type in details
-    storeId: number; // Added for navigation to customer detail page
+    customerType: string; 
+    storeId: number; 
 }
 
 const FieldOfficerVisitReport: React.FC = () => {
@@ -116,11 +116,9 @@ const FieldOfficerVisitReport: React.FC = () => {
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
     const [rangeSelect, setRangeSelect] = useState<string>('');
     
-    // Store dates as YYYY-MM-DD strings for API and state consistency
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
 
-    // State for popover visibility
     const [isStartDatePopoverOpen, setIsStartDatePopoverOpen] = useState(false);
     const [isEndDatePopoverOpen, setIsEndDatePopoverOpen] = useState(false);
 
@@ -131,12 +129,12 @@ const FieldOfficerVisitReport: React.FC = () => {
     const [summaryHeader, setSummaryHeader] = useState<React.ReactNode>(null);
     const [summaryRow, setSummaryRow] = useState<React.ReactNode>(null);
 
-    // State for visit details drill-down
     const [visitDetails, setVisitDetails] = useState<VisitDetail[] | null>(null);
     const [detailsLoading, setDetailsLoading] = useState<boolean>(false);
     const [detailsError, setDetailsError] = useState<string | null>(null);
     const [selectedCustomerTypeForDetails, setSelectedCustomerTypeForDetails] = useState<string | null>(null);
     const [employeeSearchTerm, setEmployeeSearchTerm] = useState<string>(""); // New state for search
+    const searchInputRef = React.useRef<HTMLInputElement>(null); // Added ref for search input
 
     useEffect(() => {
         const fetchAllEmployeeData = async () => {
@@ -210,13 +208,13 @@ const FieldOfficerVisitReport: React.FC = () => {
         }
         setDetailsLoading(true);
         setDetailsError(null);
-        setVisitDetails(null); // Clear previous details
+        setVisitDetails(null); 
         setSelectedCustomerTypeForDetails(displayCategory);
 
         const apiCustomerType = displayCategoryToApiTypeMap[displayCategory] || displayCategory.toLowerCase();
 
         try {
-            const url = `http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/visit/customer-visit-details?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}&customerType=${apiCustomerType}`;
+            const url = `https://api.gajkesaristeels.in/visit/customer-visit-details?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}&customerType=${apiCustomerType}`;
             const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
             if (!response.ok) {
                 const errTxt = await response.text();
@@ -238,27 +236,25 @@ const FieldOfficerVisitReport: React.FC = () => {
         }
         setReportLoading(true); setReportError(null); setShowReport(false);
         try {
-            const url = `http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/visit/field-officer-stats?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}`;
+            const url = `https://api.gajkesaristeels.in/visit/field-officer-stats?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}`;
             const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
             if (!response.ok) { const errTxt = await response.text(); throw new Error(`API Error ${response.status}: ${errTxt || response.statusText}`); }
             const data: FieldOfficerStatsResponse = await response.json();
 
-            // Define display categories and a mapping from API keys (lowercase) to these display categories
             const displayCategories = ["Shop", "Site Visit", "Architect", "Engineer", "Builder", "Others"];
             const apiTypeToDisplayCategoryMap: { [apiTypeLowercase: string]: string } = {
                 "shop": "Shop",
                 "site visit": "Site Visit",
-                "architect": "Architect", // API should send 'architect' if this category exists
+                "architect": "Architect", 
                 "engineer": "Engineer",
                 "builder": "Builder"
             };
 
             const categorizedVisits: { [key: string]: number } = {};
-            displayCategories.forEach(cat => categorizedVisits[cat] = 0); // Initialize all to 0
+            displayCategories.forEach(cat => categorizedVisits[cat] = 0); 
 
             for (const apiType in data.visitsByCustomerType) {
                 const count = data.visitsByCustomerType[apiType];
-                // Normalize API key to lowercase for robust mapping
                 const targetDisplayCategory = apiTypeToDisplayCategoryMap[apiType.toLowerCase()];
 
                 if (targetDisplayCategory) {
@@ -298,7 +294,7 @@ const FieldOfficerVisitReport: React.FC = () => {
                 </>
             );
             setShowReport(true);
-            setVisitDetails(null); // Clear details when main report is re-generated
+            setVisitDetails(null);
             setDetailsError(null);
             setSelectedCustomerTypeForDetails(null);
         } catch (err: any) {
@@ -312,7 +308,6 @@ const FieldOfficerVisitReport: React.FC = () => {
     const handleStartDateSelect = (date: Date | undefined) => {
         if (date) {
             setStartDate(dayjs(date).format('YYYY-MM-DD'));
-             // If new start date is after current end date, clear end date
             if (endDate && dayjs(date).isAfter(dayjs(endDate))) {
                 setEndDate('');
             }
@@ -344,7 +339,7 @@ const FieldOfficerVisitReport: React.FC = () => {
                     <label htmlFor="employeeSelectTrigger" className="block text-sm font-medium text-gray-700 mb-1">Field Officer:</label>
                     {employeesLoading ? <div className="flex items-center justify-center min-w-[200px] h-[42px]"><ClipLoader size={24} color="#4A90E2"/></div>
                         : employeesError ? <div className="text-red-500 text-sm min-w-[200px]">Error loading.</div>
-                        : <DropdownMenu>
+                        : <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" id="employeeSelectTrigger" className="min-w-[200px] h-[42px] justify-between text-sm">
                                     {selectedEmployeeId && fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId) ? `${fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId)?.firstName} ${fieldOfficers.find(emp => emp.id.toString() === selectedEmployeeId)?.lastName}` : "Select Field Officer"}
@@ -354,9 +349,18 @@ const FieldOfficerVisitReport: React.FC = () => {
                             <DropdownMenuContent className="min-w-[200px]">
                                 <div className="p-2">
                                     <Input 
+                                        ref={searchInputRef}
                                         placeholder="Search officer..."
                                         value={employeeSearchTerm}
-                                        onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                                        onChange={(e) => {
+                                            const newValue = e.target.value;
+                                            setEmployeeSearchTerm(newValue);
+                                            setTimeout(() => {
+                                                if (searchInputRef.current && document.activeElement !== searchInputRef.current) {
+                                                     searchInputRef.current.focus();
+                                                }
+                                            }, 0);
+                                        }}
                                         className="w-full mb-2 h-8"
                                     />
                                 </div>
@@ -386,7 +390,6 @@ const FieldOfficerVisitReport: React.FC = () => {
                             setStartDate('');
                             setEndDate('');
                         }
-                        // Predefined ranges will be handled by the useEffect dependent on rangeSelect
                     }}>
                         <SelectTrigger id="rangeSelectTrigger" className="min-w-[180px] h-[42px] text-sm">
                             <SelectValue placeholder="Select Range" />
@@ -474,7 +477,6 @@ const FieldOfficerVisitReport: React.FC = () => {
                 </div>
             )}
 
-            {/* Section for Visit Details */}
             {selectedCustomerTypeForDetails && (
                      <div id="visitDetailsSection" className="mt-8">
                     <h2 className="text-xl font-semibold mb-4 text-gray-700">

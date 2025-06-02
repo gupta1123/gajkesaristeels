@@ -19,6 +19,8 @@ import { useQuery, QueryClient, QueryClientProvider, QueryKey, QueryFunctionCont
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const queryClient = new QueryClient();
 
@@ -29,13 +31,21 @@ interface SalesData {
 interface Enquiry {
   id: number;
   taluka: string;
+  city?: string;
+  state?: string;
   population: number;
   dealerName: string;
   expenses: number;
   contactNumber: string;
-  fileName: string;
-  sheetName: string;
   sales: SalesData;
+  storeCount?: number;
+}
+
+interface PaginatedEnquiryResponse {
+  content: Enquiry[];
+  totalPages?: number;
+  totalElements?: number;
+  // Add other potential pagination fields if your API returns them
 }
 
 const formatDateToMMMyy = (date: Date | undefined): string => {
@@ -61,6 +71,8 @@ const EnquiriesPageContent: React.FC = () => {
   const [endDate, setEndDate] = useState<string>('');
   const [storeNameFilter, setStoreNameFilter] = useState<string>('');
   const [talukaFilter, setTalukaFilter] = useState<string>('');
+  const [cityFilter, setCityFilter] = useState<string>('');
+  const [stateFilter, setStateFilter] = useState<string>('');
 
   const [tempStartMonth, setTempStartMonth] = useState<number | undefined>(undefined);
   const [tempStartYear, setTempStartYear] = useState<number | undefined>(undefined);
@@ -69,6 +81,8 @@ const EnquiriesPageContent: React.FC = () => {
 
   const [tempStoreNameFilter, setTempStoreNameFilter] = useState<string>('');
   const [tempTalukaFilter, setTempTalukaFilter] = useState<string>('');
+  const [tempCityFilter, setTempCityFilter] = useState<string>('');
+  const [tempStateFilter, setTempStateFilter] = useState<string>('');
   
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 2000 + 1 }, (_, index) => currentYear - index);
@@ -77,37 +91,53 @@ const EnquiriesPageContent: React.FC = () => {
     "July", "August", "September", "October", "November", "December"
   ];
 
+  // Pagination and Sorting State
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(0); // New state for total pages from API
+  const [sortColumn, setSortColumn] = useState<string>('dealerName');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [isSortByStoreCount, setIsSortByStoreCount] = useState<boolean>(false);
+
+  // Helper to map display column names to API sortable field names
+  const columnToSortApiField: { [key: string]: string } = {
+    'Taluka': 'taluka',
+    'City': 'city',
+    'State': 'state',
+    'Population': 'population',
+    'Store Name': 'dealerName',
+    'Expenses': 'expenses',
+    // 'Phone': 'contactNumber', // If contactNumber is sortable
+    // 'Store Count': 'storeCount', // If storeCount is sortable via API
+  };
+
   type EnquiryApiQueryKey = [
-    string,
-    string, // startDate (MMM-yy)
-    string, // endDate (MMM-yy)
-    string, // storeNameFilter
-    string // talukaFilter
+    string, string, string, string, string, string, string, // query key, dates, filters
+    number, number, string, string, boolean // pagination & sorting
   ];
 
-  const fetchEnquiries = useCallback(async (context: QueryFunctionContext<EnquiryApiQueryKey>): Promise<Enquiry[]> => {
-    const [_key, startMonth, endMonth, storeName, taluka] = context.queryKey;
+  const fetchEnquiries = useCallback(async (context: QueryFunctionContext<EnquiryApiQueryKey>): Promise<PaginatedEnquiryResponse> => {
+    const [_key, startMonthYear, endMonthYear, storeName, taluka, city, state, page, size, sortBy, direction, sortByStoreCountVal] = context.queryKey;
+    
     if (!token) throw new Error('No token available. Please log in.');
 
     const queryParams = new URLSearchParams();
-    let baseUrl = 'http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/enquiry/';
+    const baseUrl = 'http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/enquiry/filtered'; 
 
-    const hasAnyFilter = storeName || taluka || startMonth || endMonth;
+    if (storeName) queryParams.append('storeName', storeName);
+    if (taluka) queryParams.append('taluka', taluka);
+    if (city) queryParams.append('city', city);
+    if (state) queryParams.append('state', state);
+    if (startMonthYear) queryParams.append('startMonthYear', startMonthYear);
+    if (endMonthYear) queryParams.append('endMonthYear', endMonthYear);
+    
+    queryParams.append('sortByStoreCount', String(sortByStoreCountVal));
+    queryParams.append('page', String(page));
+    queryParams.append('size', String(size));
+    if (sortBy) queryParams.append('sortBy', sortBy);
+    if (direction) queryParams.append('direction', direction);
 
-    if (hasAnyFilter) {
-      baseUrl += 'filter';
-      if (storeName) queryParams.append('storeName', storeName);
-      if (taluka) queryParams.append('taluka', taluka);
-      if (startMonth) queryParams.append('startMonth', startMonth);
-      if (endMonth && startMonth) queryParams.append('endMonth', endMonth);
-      else if (endMonth && !startMonth) {
-        queryParams.append('endMonth', endMonth);
-      }
-    } else {
-      baseUrl += 'getAll';
-    }
-
-    const endpoint = queryParams.toString() ? `${baseUrl}?${queryParams.toString()}` : baseUrl;
+    const endpoint = `${baseUrl}?${queryParams.toString()}`;
     
     const response = await fetch(endpoint, {
       headers: { 'Authorization': `Bearer ${token}` },
@@ -116,26 +146,46 @@ const EnquiriesPageContent: React.FC = () => {
       const errorData = await response.text();
       throw new Error(`Network response was not ok while fetching enquiries: ${errorData || response.statusText}`);
     }
-    return response.json();
+    return response.json(); // Expects PaginatedEnquiryResponse
   }, [token]);
 
-  const { data: enquiriesDataFromApi, isLoading, isError, error, refetch } = useQuery<Enquiry[], Error, Enquiry[], EnquiryApiQueryKey>(
+  const { 
+    data: enquiriesApiResponse, // Renamed to avoid confusion, this is the PaginatedEnquiryResponse
+    isLoading, 
+    isError, 
+    error, 
+    refetch 
+  } = useQuery<PaginatedEnquiryResponse, Error, PaginatedEnquiryResponse, EnquiryApiQueryKey>(
     ['enquiriesApi', 
       startDate,
       endDate,
       storeNameFilter,
-      talukaFilter
+      talukaFilter,
+      cityFilter,
+      stateFilter,
+      currentPage,
+      pageSize,
+      sortColumn,
+      sortDirection,
+      isSortByStoreCount
     ],
     fetchEnquiries,
     {
       enabled: !!token,
       retry: 1,
+      // keepPreviousData: true, // Consider enabling for smoother pagination UX
     }
   );
 
-  const filteredEnquiries = React.useMemo(() => {
-    return enquiriesDataFromApi || [];
-  }, [enquiriesDataFromApi]);
+  useEffect(() => {
+    if (enquiriesApiResponse) {
+      setTotalPages(enquiriesApiResponse.totalPages || 0);
+    }
+  }, [enquiriesApiResponse]);
+
+  const filteredEnquiries: Enquiry[] = React.useMemo(() => {
+    return enquiriesApiResponse?.content || []; // Extract content array
+  }, [enquiriesApiResponse]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -164,12 +214,14 @@ const EnquiriesPageContent: React.FC = () => {
         setUploadMessage('File uploaded successfully!');
         setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
-        refetch();
-      } else if (response.ok) {
-        setUploadMessage(responseText);
+        setCurrentPage(0); // Reset to first page as data might have changed significantly
+        refetch(); // Refetch the enquiry data
+      } else if (response.ok) { // Handle other successful (2xx) responses that might have different messages
+        setUploadMessage(responseText); // Display the actual success message from server
         setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
-        refetch();
+        setCurrentPage(0); // Reset to first page
+        refetch(); // Refetch the enquiry data
       } else {
         setUploadMessage(`Upload failed: ${responseText || response.statusText}`);
       }
@@ -181,36 +233,68 @@ const EnquiriesPageContent: React.FC = () => {
   };
 
   const handleApplyFilters = () => {
+    setCurrentPage(0);
     setStartDate(formatMonthYearToString(tempStartMonth, tempStartYear));
     setEndDate(formatMonthYearToString(tempEndMonth, tempEndYear));
     setStoreNameFilter(tempStoreNameFilter);
     setTalukaFilter(tempTalukaFilter);
+    setCityFilter(tempCityFilter);
+    setStateFilter(tempStateFilter);
   };
 
   const handleClearFilters = () => {
+    setCurrentPage(0);
     setTempStartMonth(undefined);
     setTempStartYear(undefined);
     setTempEndMonth(undefined);
     setTempEndYear(undefined);
     setTempStoreNameFilter('');
     setTempTalukaFilter('');
+    setTempCityFilter('');
+    setTempStateFilter('');
     
     setStartDate('');
     setEndDate('');
     setStoreNameFilter('');
     setTalukaFilter('');
+    setCityFilter('');
+    setStateFilter('');
+    setIsSortByStoreCount(false);
+    setSortColumn('dealerName');
+    setSortDirection('asc');
   };
 
-  const baseDisplayColumns = ['Taluka', 'Population', 'Store Name', 'Expenses', 'Phone'];
+  const handleSort = (columnLabel: string) => {
+    const apiField = columnToSortApiField[columnLabel];
+    if (!apiField) {
+      // Column is not sortable via API (e.g., calculated fields like Total Sales or dynamic sales months)
+      console.warn(`Column ${columnLabel} is not configured for API sorting.`);
+      return;
+    }
+
+    if (apiField === sortColumn) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(apiField);
+      setSortDirection('asc');
+    }
+    setCurrentPage(0); // Reset to first page when sort changes
+  };
+
   const salesMonths = React.useMemo(() => {
-    const months = new Set<string>();
-    filteredEnquiries.forEach((enquiry: Enquiry) => {
-      if (enquiry.sales) {
-        Object.keys(enquiry.sales).forEach(month => months.add(month));
-      }
-    });
-    return Array.from(months).sort();
+    const monthsSet = new Set<string>(); // Renamed to avoid conflict with global months array
+    // Now filteredEnquiries should correctly be an array or empty array
+    if (Array.isArray(filteredEnquiries)) {
+        filteredEnquiries.forEach((enquiry: Enquiry) => {
+            if (enquiry.sales) {
+                Object.keys(enquiry.sales).forEach(month => monthsSet.add(month));
+            }
+        });
+    }
+    return Array.from(monthsSet).sort(); // Ensure it's sorted for consistent column order
   }, [filteredEnquiries]);
+
+  const baseDisplayColumns = ['Taluka', 'City', 'State', 'Population', 'Store Name', 'Expenses', 'Phone'];
   const tableDisplayColumns = [...baseDisplayColumns, ...salesMonths, 'Total Sales'];
 
   const calculateTotalSales = (sales: SalesData | undefined): number => {
@@ -234,8 +318,16 @@ const EnquiriesPageContent: React.FC = () => {
           <TableHeader className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <TableRow>
               {tableDisplayColumns.map((column) => (
-                <TableHead key={column} scope="col" className="px-6 py-3">
+                <TableHead 
+                  key={column} 
+                  scope="col" 
+                  className={`px-6 py-3 ${columnToSortApiField[column] ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600' : ''}`}
+                  onClick={() => columnToSortApiField[column] && handleSort(column)}
+                >
                   {column}
+                  {sortColumn === columnToSortApiField[column] && (
+                    <span className="ml-1">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                  )}
                 </TableHead>
               ))}
             </TableRow>
@@ -244,6 +336,8 @@ const EnquiriesPageContent: React.FC = () => {
             {filteredEnquiries.map((enquiry: Enquiry) => (
               <TableRow key={enquiry.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <TableCell className="px-6 py-4">{enquiry.taluka}</TableCell>
+                <TableCell className="px-6 py-4">{enquiry.city || ''}</TableCell>
+                <TableCell className="px-6 py-4">{enquiry.state || ''}</TableCell>
                 <TableCell className="px-6 py-4">{enquiry.population}</TableCell>
                 <TableCell className="px-6 py-4">{enquiry.dealerName}</TableCell>
                 <TableCell className="px-6 py-4">{enquiry.expenses}</TableCell>
@@ -321,6 +415,28 @@ const EnquiriesPageContent: React.FC = () => {
               placeholder="Enter Taluka"
               value={tempTalukaFilter} 
               onChange={(e) => setTempTalukaFilter(e.target.value)} 
+              className="h-9 w-full"
+            />
+          </div>
+          <div>
+            <label htmlFor="cityFilter" className="block text-sm font-medium text-gray-700 mb-1">City</label>
+            <Input 
+              id="cityFilter"
+              type="text" 
+              placeholder="Enter City"
+              value={tempCityFilter} 
+              onChange={(e) => setTempCityFilter(e.target.value)} 
+              className="h-9 w-full"
+            />
+          </div>
+          <div>
+            <label htmlFor="stateFilter" className="block text-sm font-medium text-gray-700 mb-1">State</label>
+            <Input 
+              id="stateFilter"
+              type="text" 
+              placeholder="Enter State"
+              value={tempStateFilter} 
+              onChange={(e) => setTempStateFilter(e.target.value)} 
               className="h-9 w-full"
             />
           </div>
@@ -412,6 +528,18 @@ const EnquiriesPageContent: React.FC = () => {
             </Select>
           </div>
           
+          <div className="flex items-center space-x-2 pt-5">
+            <Switch
+              id="sortByStoreCountToggle"
+              checked={isSortByStoreCount}
+              onCheckedChange={(checked) => {
+                setCurrentPage(0);
+                setIsSortByStoreCount(checked);
+              }}
+            />
+            <Label htmlFor="sortByStoreCountToggle">Sort by Count</Label>
+          </div>
+          
           <div className="flex gap-2 items-end sm:col-span-2 md:col-span-1 lg:col-span-1 xl:col-span-1 justify-start pt-5">
             <Button onClick={handleApplyFilters} className="w-full sm:w-auto bg-black hover:bg-gray-800 text-white">Apply</Button>
             <Button variant="outline" onClick={handleClearFilters} className="w-full sm:w-auto">Clear</Button>
@@ -420,6 +548,47 @@ const EnquiriesPageContent: React.FC = () => {
       </div>
 
       {renderMainContent()}
+      
+      <div className="flex justify-between items-center mt-4 p-4 bg-gray-50 rounded-lg shadow">
+        <div>
+            <Label htmlFor="pageSizeSelect" className="mr-2 text-sm font-medium text-gray-700">Rows per page:</Label>
+            <Select
+                value={pageSize.toString()}
+                onValueChange={(value) => {
+                    setCurrentPage(0);
+                    setPageSize(parseInt(value));
+                }}
+            >
+                <SelectTrigger id="pageSizeSelect" className="w-[80px] h-9">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {[10, 20, 50, 100].map(size => (
+                        <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+        <div className="flex items-center gap-2">
+            <Button 
+                variant="outline" 
+                onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                disabled={currentPage === 0 || isLoading}
+                className="h-9"
+            >
+                Previous
+            </Button>
+            <span className="text-sm text-gray-700">Page {currentPage + 1} of {totalPages > 0 ? totalPages : 1}</span>
+            <Button 
+                variant="outline" 
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                disabled={isLoading || currentPage >= totalPages - 1}
+                className="h-9"
+            >
+                Next
+            </Button>
+        </div>
+      </div>
     </div>
   );
 };
