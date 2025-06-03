@@ -134,8 +134,8 @@ const EnquiriesPageContent: React.FC = () => {
     queryParams.append('sortByStoreCount', String(sortByStoreCountVal));
     queryParams.append('page', String(page));
     queryParams.append('size', String(size));
-    if (sortBy) queryParams.append('sortBy', sortBy);
-    if (direction) queryParams.append('direction', direction);
+    // Do NOT pass sortBy or direction at all
+    // if (direction) queryParams.append('direction', direction);
 
     const endpoint = `${baseUrl}?${queryParams.toString()}`;
     
@@ -153,7 +153,7 @@ const EnquiriesPageContent: React.FC = () => {
     data: enquiriesApiResponse, // Renamed to avoid confusion, this is the PaginatedEnquiryResponse
     isLoading, 
     isError, 
-    error, 
+    error,  
     refetch 
   } = useQuery<PaginatedEnquiryResponse, Error, PaginatedEnquiryResponse, EnquiryApiQueryKey>(
     ['enquiriesApi', 
@@ -165,14 +165,14 @@ const EnquiriesPageContent: React.FC = () => {
       stateFilter,
       currentPage,
       pageSize,
-      sortColumn,
-      sortDirection,
+      '', // sortColumn (not used)
+      '', // sortDirection (not used)
       isSortByStoreCount
     ],
     fetchEnquiries,
     {
       enabled: !!token,
-      retry: 1,
+      retry: 3,
       // keepPreviousData: true, // Consider enabling for smoother pagination UX
     }
   );
@@ -234,8 +234,20 @@ const EnquiriesPageContent: React.FC = () => {
 
   const handleApplyFilters = () => {
     setCurrentPage(0);
-    setStartDate(formatMonthYearToString(tempStartMonth, tempStartYear));
-    setEndDate(formatMonthYearToString(tempEndMonth, tempEndYear));
+
+    const sDateStr = formatMonthYearToString(tempStartMonth, tempStartYear);
+    const eDateStr = formatMonthYearToString(tempEndMonth, tempEndYear);
+
+    if (sDateStr && !eDateStr) {
+        // If only start date is provided, use it for both start and end
+        setStartDate(sDateStr);
+        setEndDate(sDateStr);
+    } else {
+        // Otherwise, use them as they are (both provided, only end provided, or neither)
+        setStartDate(sDateStr);
+        setEndDate(eDateStr);
+    }
+
     setStoreNameFilter(tempStoreNameFilter);
     setTalukaFilter(tempTalukaFilter);
     setCityFilter(tempCityFilter);
@@ -265,20 +277,7 @@ const EnquiriesPageContent: React.FC = () => {
   };
 
   const handleSort = (columnLabel: string) => {
-    const apiField = columnToSortApiField[columnLabel];
-    if (!apiField) {
-      // Column is not sortable via API (e.g., calculated fields like Total Sales or dynamic sales months)
-      console.warn(`Column ${columnLabel} is not configured for API sorting.`);
-      return;
-    }
-
-    if (apiField === sortColumn) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(apiField);
-      setSortDirection('asc');
-    }
-    setCurrentPage(0); // Reset to first page when sort changes
+    // Remove sorting logic
   };
 
   const salesMonths = React.useMemo(() => {
@@ -307,7 +306,18 @@ const EnquiriesPageContent: React.FC = () => {
       return <p className="text-red-500">Authentication token not found. Please log in to view enquiries.</p>;
     }
     if (isLoading) return <p>Loading enquiries from API...</p>;
-    if (isError) return <p className="text-red-500">Error fetching enquiries: {error?.message}</p>;
+    if (isError) return (
+      <div className="flex items-center gap-3 text-red-500">
+        <span>Error fetching enquiries: {error?.message}</span>
+        <Button
+          variant="outline"
+          onClick={() => refetch()}
+          className="h-7 px-3 py-1 text-xs"
+        >
+          Refresh
+        </Button>
+      </div>
+    );
     return (
       <div className="overflow-x-auto shadow-md sm:rounded-lg mt-4">
         <Table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -321,13 +331,9 @@ const EnquiriesPageContent: React.FC = () => {
                 <TableHead 
                   key={column} 
                   scope="col" 
-                  className={`px-6 py-3 ${columnToSortApiField[column] ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600' : ''}`}
-                  onClick={() => columnToSortApiField[column] && handleSort(column)}
+                  className={`px-6 py-3`}
                 >
                   {column}
-                  {sortColumn === columnToSortApiField[column] && (
-                    <span className="ml-1">{sortDirection === 'asc' ? '▲' : '▼'}</span>
-                  )}
                 </TableHead>
               ))}
             </TableRow>
@@ -444,10 +450,10 @@ const EnquiriesPageContent: React.FC = () => {
           <div>
             <label htmlFor="fromYearFilter" className="block text-sm font-medium text-gray-700 mb-1">From Year</label>
             <Select
-              value={tempStartYear?.toString()}
+              value={tempStartYear !== undefined ? tempStartYear.toString() : "NONE_VALUE"}
               onValueChange={(value) => {
                 if (value === "NONE_VALUE") setTempStartYear(undefined);
-                else setTempStartYear(value ? parseInt(value) : undefined);
+                else setTempStartYear(parseInt(value));
               }}
             >
               <SelectTrigger className="h-9 w-full">
@@ -465,10 +471,10 @@ const EnquiriesPageContent: React.FC = () => {
           <div>
             <label htmlFor="fromMonthFilter" className="block text-sm font-medium text-gray-700 mb-1">From Month</label>
             <Select
-              value={tempStartMonth?.toString()}
+              value={tempStartMonth !== undefined ? tempStartMonth.toString() : "NONE_VALUE"}
               onValueChange={(value) => {
                 if (value === "NONE_VALUE") setTempStartMonth(undefined);
-                else setTempStartMonth(value ? parseInt(value) : undefined);
+                else setTempStartMonth(parseInt(value));
               }}
               disabled={!tempStartYear}
             >
@@ -476,7 +482,7 @@ const EnquiriesPageContent: React.FC = () => {
                 <SelectValue placeholder="Month" />
               </SelectTrigger>
               <SelectContent>
-                 <SelectItem value="NONE_VALUE"><em>None</em></SelectItem>
+                <SelectItem value="NONE_VALUE"><em>None</em></SelectItem>
                 {months.map((month, index) => (
                   <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
                 ))}
@@ -487,10 +493,10 @@ const EnquiriesPageContent: React.FC = () => {
           <div>
             <label htmlFor="toYearFilter" className="block text-sm font-medium text-gray-700 mb-1">To Year</label>
             <Select
-              value={tempEndYear?.toString()}
+              value={tempEndYear !== undefined ? tempEndYear.toString() : "NONE_VALUE"}
               onValueChange={(value) => {
                 if (value === "NONE_VALUE") setTempEndYear(undefined);
-                else setTempEndYear(value ? parseInt(value) : undefined);
+                else setTempEndYear(parseInt(value));
               }}
               disabled={!tempStartYear || typeof tempStartMonth !== 'number'}
             >
@@ -509,10 +515,10 @@ const EnquiriesPageContent: React.FC = () => {
           <div>
             <label htmlFor="toMonthFilter" className="block text-sm font-medium text-gray-700 mb-1">To Month</label>
             <Select
-              value={tempEndMonth?.toString()}
+              value={tempEndMonth !== undefined ? tempEndMonth.toString() : "NONE_VALUE"}
               onValueChange={(value) => {
                 if (value === "NONE_VALUE") setTempEndMonth(undefined);
-                else setTempEndMonth(value ? parseInt(value) : undefined);
+                else setTempEndMonth(parseInt(value));
               }}
               disabled={!tempEndYear}
             >

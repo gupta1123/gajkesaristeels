@@ -122,6 +122,20 @@ const formatSalesNumber = (num: number): string => {
     return num.toString();
 };
 
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3, delay = 1000): Promise<Response> {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(await response.text() || response.statusText);
+            return response;
+        } catch (err) {
+            if (i === retries - 1) throw err;
+            await new Promise(res => setTimeout(res, delay));
+        }
+    }
+    throw new Error('Failed after retries');
+}
+
 const FieldOfficerVisitReport: React.FC = () => {
     const token = useSelector((state: RootState) => state.auth.token);
 
@@ -232,11 +246,7 @@ const FieldOfficerVisitReport: React.FC = () => {
 
         try {
             const url = `https://api.gajkesaristeels.in/visit/customer-visit-details?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}&customerType=${apiCustomerType}`;
-            const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-            if (!response.ok) {
-                const errTxt = await response.text();
-                throw new Error(`API Error ${response.status} for ${displayCategory} details: ${errTxt || response.statusText}`);
-            }
+            const response = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${token}` } }, 3, 1000);
             const data: VisitDetail[] = await response.json();
             setVisitDetails(data);
         } catch (err: any) {
@@ -261,8 +271,7 @@ const FieldOfficerVisitReport: React.FC = () => {
         setReportLoading(true); setReportError(null); setShowReport(false);
         try {
             const url = `https://api.gajkesaristeels.in/visit/field-officer-stats?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}`;
-            const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-            if (!response.ok) { const errTxt = await response.text(); throw new Error(`API Error ${response.status}: ${errTxt || response.statusText}`); }
+            const response = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${token}` } }, 3, 1000);
             const data: FieldOfficerStatsResponse = await response.json();
 
             const displayCategories = ["Shop", "Site Visit", "Architect", "Engineer", "Builder", "Others"];
@@ -300,8 +309,9 @@ const FieldOfficerVisitReport: React.FC = () => {
                             <th key={displayCat}>
                                 <button
                                     onClick={() => fetchCustomerTypeDetails(displayCat)}
-                                    className="fo-customer-type-link"
+                                    className="text-blue-600 underline hover:text-blue-800 bg-transparent border-none p-0 m-0 cursor-pointer disabled:text-gray-400"
                                     disabled={reportLoading || detailsLoading}
+                                    type="button"
                                 >
                                     {displayCat}
                                 </button>
@@ -498,7 +508,19 @@ const FieldOfficerVisitReport: React.FC = () => {
             )}
 
             {reportLoading && <div className="flex justify-center items-center p-10"><ClipLoader color="#4A90E2" size={50} /></div>}
-            {reportError && <div className="text-center p-4 my-4 text-red-700 bg-red-100 border border-red-400 rounded"><p><strong>Error:</strong> {reportError}</p></div>}
+            {reportError && (
+                <div className="text-center p-4 my-4 text-red-700 bg-red-100 border border-red-400 rounded flex flex-col items-center gap-2">
+                    <p><strong>Error:</strong> {reportError}</p>
+                    <Button
+                        variant="outline"
+                        onClick={handleGenerateReport}
+                        className="h-7 px-3 py-1 text-xs"
+                        disabled={reportLoading}
+                    >
+                        Refresh
+                    </Button>
+                </div>
+            )}
             {showReport && !reportLoading && !reportError && (
                     <div id="reportSection" className="mt-6">
                     <table id="summaryTable" className="fo-table w-full">
@@ -543,19 +565,19 @@ const FieldOfficerVisitReport: React.FC = () => {
                                                 return dateB - dateA;
                                             })
                                             .map((detail, index) => (
-                                                <tr key={index}>
-                                                    <td>
-                                                        <Link href={`/CustomerDetailPage/${detail.storeId}`} legacyBehavior>
-                                                            <a className="text-blue-600 hover:text-blue-800 hover:underline">
-                                                                {detail.customerName}
-                                                            </a>
-                                                        </Link>
-                                                    </td>
-                                                    <td>{detail.city}</td>
-                                                    <td>{detail.taluka}</td>
-                                                    <td>{detail.state}</td>
-                                                    <td>{dayjs(detail.lastVisited).format('MMM D, YYYY')}</td>
-                                                    <td>{detail.visitCount}</td>
+                                            <tr key={index}>
+                                                <td>
+                                                    <Link href={`/CustomerDetailPage/${detail.storeId}`} legacyBehavior>
+                                                        <a className="text-blue-600 hover:text-blue-800 hover:underline">
+                                                            {detail.customerName}
+                                                        </a>
+                                                    </Link>
+                                                </td>
+                                                <td>{detail.city}</td>
+                                                <td>{detail.taluka}</td>
+                                                <td>{detail.state}</td>
+                                                <td>{dayjs(detail.lastVisited).format('MMM D, YYYY')}</td>
+                                                <td>{detail.visitCount}</td>
                                                     <td>{
                                                         (() => {
                                                             const val = detail.avgMonthlySales;
@@ -565,10 +587,10 @@ const FieldOfficerVisitReport: React.FC = () => {
                                                             return formatSalesNumber(rounded);
                                                         })()
                                                     }</td>
-                                                    <td>{Number.isInteger(detail.avgIntentLevel) ? detail.avgIntentLevel : detail.avgIntentLevel.toFixed(1)}</td>
-                                                    <td>{detail.customerType}</td>
-                                                </tr>
-                                            ))}
+                                                <td>{Number.isInteger(detail.avgIntentLevel) ? detail.avgIntentLevel : detail.avgIntentLevel.toFixed(1)}</td>
+                                                <td>{detail.customerType}</td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
