@@ -19,8 +19,9 @@ const sidebarItems = [
   { href: '/Reports', icon: FiBarChart2, label: 'Reports', roles: ['ADMIN'] },
   { href: '/CustomerListPage', icon: FiUsers, label: 'Customers', roles: ['ADMIN', 'MANAGER', 'FIELD OFFICER'] },
   { href: '/Employeelist', icon: FiUser, label: 'Employees', roles: ['ADMIN'] },
-  { href: '/Settings', icon: FiSettings, label: 'Settings', roles: ['ADMIN'] },
   { href: '/Enquiries', icon: FiClipboard, label: 'Enquiries', roles: ['ADMIN', 'MANAGER', 'FIELD OFFICER'] },
+  { href: '/Settings', icon: FiSettings, label: 'Settings', roles: ['ADMIN'] },
+
 ];
 
 const BottomBar: React.FC<{ role: string | null }> = ({ role }) => {

@@ -122,7 +122,7 @@ const formatSalesNumber = (num: number): string => {
     return num.toString();
 };
 
-async function fetchWithRetry(url: string, options: RequestInit, retries = 3, delay = 1000): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, retries = 6, delay = 1000): Promise<Response> {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(url, options);
@@ -246,7 +246,7 @@ const FieldOfficerVisitReport: React.FC = () => {
 
         try {
             const url = `https://api.gajkesaristeels.in/visit/customer-visit-details?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}&customerType=${apiCustomerType}`;
-            const response = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${token}` } }, 3, 1000);
+            const response = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${token}` } }, 6, 1000);
             const data: VisitDetail[] = await response.json();
             setVisitDetails(data);
         } catch (err: any) {
@@ -271,7 +271,7 @@ const FieldOfficerVisitReport: React.FC = () => {
         setReportLoading(true); setReportError(null); setShowReport(false);
         try {
             const url = `https://api.gajkesaristeels.in/visit/field-officer-stats?employeeId=${selectedEmployeeId}&startDate=${startDate}&endDate=${endDate}`;
-            const response = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${token}` } }, 3, 1000);
+            const response = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${token}` } }, 6, 1000);
             const data: FieldOfficerStatsResponse = await response.json();
 
             const displayCategories = ["Shop", "Site Visit", "Architect", "Engineer", "Builder", "Others"];

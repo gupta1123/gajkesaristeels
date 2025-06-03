@@ -172,7 +172,7 @@ const EnquiriesPageContent: React.FC = () => {
     fetchEnquiries,
     {
       enabled: !!token,
-      retry: 3,
+      retry: 6,
       // keepPreviousData: true, // Consider enabling for smoother pagination UX
     }
   );
@@ -281,8 +281,7 @@ const EnquiriesPageContent: React.FC = () => {
   };
 
   const salesMonths = React.useMemo(() => {
-    const monthsSet = new Set<string>(); // Renamed to avoid conflict with global months array
-    // Now filteredEnquiries should correctly be an array or empty array
+    const monthsSet = new Set<string>();
     if (Array.isArray(filteredEnquiries)) {
         filteredEnquiries.forEach((enquiry: Enquiry) => {
             if (enquiry.sales) {
@@ -290,7 +289,15 @@ const EnquiriesPageContent: React.FC = () => {
             }
         });
     }
-    return Array.from(monthsSet).sort(); // Ensure it's sorted for consistent column order
+    return Array.from(monthsSet).sort((a, b) => {
+      const parse = (str: string) => {
+        const [mon, yr] = str.split('-');
+        const monthIdx = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].findIndex(m => m === mon);
+        const yearNum = parseInt(yr, 10) + (parseInt(yr, 10) < 70 ? 2000 : 1900);
+        return new Date(yearNum, monthIdx);
+      };
+      return parse(a).getTime() - parse(b).getTime();
+    });
   }, [filteredEnquiries]);
 
   const baseDisplayColumns = ['Taluka', 'City', 'State', 'Population', 'Store Name', 'Expenses', 'Phone'];
@@ -388,17 +395,17 @@ const EnquiriesPageContent: React.FC = () => {
             htmlFor="fileUploadEnquiry" 
             className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 cursor-pointer"
            >Select File</label>
-          {selectedFile && <span className="text-sm text-gray-600">{selectedFile.name}</span>}
+          {selectedFile ? <span className="text-sm text-gray-600">{selectedFile.name}</span> : null}
           <Button onClick={handleUpload} disabled={isUploading || !selectedFile} className="whitespace-nowrap bg-black hover:bg-gray-800 text-white">
             {isUploading ? 'Uploading...' : 'Upload Data'}
           </Button>
         </div>
       </div>
-      {uploadMessage && (
+      {uploadMessage ? (
         <div className={`mb-4 p-3 rounded-md text-sm ${uploadMessage.includes('successfully') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
           {uploadMessage}
         </div>
-      )}
+      ) : null}
 
       <div className="p-4 bg-gray-50 rounded-lg shadow mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-4 items-end">
@@ -476,7 +483,7 @@ const EnquiriesPageContent: React.FC = () => {
                 if (value === "NONE_VALUE") setTempStartMonth(undefined);
                 else setTempStartMonth(parseInt(value));
               }}
-              disabled={!tempStartYear}
+              disabled={typeof tempStartYear !== 'number'}
             >
               <SelectTrigger className="h-9 w-full">
                 <SelectValue placeholder="Month" />
@@ -498,7 +505,7 @@ const EnquiriesPageContent: React.FC = () => {
                 if (value === "NONE_VALUE") setTempEndYear(undefined);
                 else setTempEndYear(parseInt(value));
               }}
-              disabled={!tempStartYear || typeof tempStartMonth !== 'number'}
+              disabled={typeof tempStartYear !== 'number' || typeof tempStartMonth !== 'number'}
             >
               <SelectTrigger className="h-9 w-full">
                 <SelectValue placeholder="Year" />
@@ -520,7 +527,7 @@ const EnquiriesPageContent: React.FC = () => {
                 if (value === "NONE_VALUE") setTempEndMonth(undefined);
                 else setTempEndMonth(parseInt(value));
               }}
-              disabled={!tempEndYear}
+              disabled={typeof tempEndYear !== 'number'}
             >
               <SelectTrigger className="h-9 w-full">
                 <SelectValue placeholder="Month" />
