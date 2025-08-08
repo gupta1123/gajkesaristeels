@@ -32,7 +32,8 @@ const OLA_CLIENT_SECRET = 'klymi04gaquWCnpa57hBEpMXR7YPhkLD';
 
 const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const currentYear = new Date().getFullYear();
-    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const currentDate = new Date();
+    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
 
     const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
     const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth);
@@ -100,17 +101,41 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                 const isCurrentMonth = Number(selectedYear) === now.getFullYear() && Number(selectedMonth) === now.getMonth() + 1;
                 const endDay = isCurrentMonth ? now.getDate() - 1 : getDaysInMonth(Number(selectedYear), Number(selectedMonth));
 
-                const response = await fetch(`https://api.gajkesaristeels.in/attendance-log/getForRange?start=${selectedYear}-${selectedMonth}-01&end=${selectedYear}-${selectedMonth}-${endDay.toString().padStart(2, '0')}`, {
+                const startDate = `${selectedYear}-${selectedMonth}-01`;
+                const endDate = `${selectedYear}-${selectedMonth}-${endDay.toString().padStart(2, '0')}`;
+                const url = `http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/attendance-log/getForRange?start=${startDate}&end=${endDate}`;
+                
+                console.log('Fetching salary data for:', { selectedYear, selectedMonth, startDate, endDate, url });
+                
+                const response = await fetch(url, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
                     },
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error Response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        errorText,
+                        url
+                    });
+                    throw new Error(`API Error ${response.status}: ${errorText || response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('Salary data received:', { month: selectedMonth, year: selectedYear, dataLength: data.length });
                 setData(data);
                 setIsDataAvailable(data.length > 0);
             }
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error('Error fetching salary data:', {
+                error,
+                selectedYear,
+                selectedMonth,
+                errorMessage: error instanceof Error ? error.message : 'Unknown error'
+            });
             setIsDataAvailable(false);
         }
     }, [selectedYear, selectedMonth, authToken]);
