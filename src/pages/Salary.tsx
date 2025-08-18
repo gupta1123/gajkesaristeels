@@ -30,14 +30,6 @@ import styles from './Salary.module.css';
 const OLA_CLIENT_ID = '7ba2810b-f481-4e31-a0c6-d436b0c7c1eb';
 const OLA_CLIENT_SECRET = 'klymi04gaquWCnpa57hBEpMXR7YPhkLD';
 
-// Environment-based API configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.gajkesaristeels.in' 
-  : 'https://api.gajkesaristeels.in';
-
-// EC2 endpoint for salary calculation (as required by backend)
-const EC2_API_URL = 'http://ec2-3-88-111-83.compute-1.amazonaws.com:8081';
-
 const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const currentYear = new Date().getFullYear();
     const currentDate = new Date();
@@ -90,7 +82,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
 
     const fetchEmployeeData = useCallback(async () => {
         try {
-            const response = await axios.get(`${EC2_API_URL}/employee/getAll`, {
+            const response = await axios.get('https://api.gajkesaristeels.in/employee/getAll', {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
             const employeeMap = response.data.reduce((acc: any, emp: any) => {
@@ -117,7 +109,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
 
                 const startDate = `${selectedYear}-${selectedMonth}-01`;
                 const endDate = `${selectedYear}-${selectedMonth}-${endDay.toString().padStart(2, '0')}`;
-                const url = `${EC2_API_URL}/salary-calculation/summary-range?startDate=${startDate}&endDate=${endDate}`;
+                const url = `https://api.gajkesaristeels.in/salary-calculation/summary-range?startDate=${startDate}&endDate=${endDate}`;
                 
                 console.log('Fetching salary data for:', { selectedYear, selectedMonth, startDate, endDate, url });
                 
@@ -159,7 +151,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
 
     const fetchTravelAllowanceData = useCallback(async (employeeId: number) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/travel-allowance/getForEmployeeAndDate?employeeId=${employeeId}&start=${selectedYear}-${selectedMonth}-01&end=${selectedYear}-${selectedMonth}-${getDaysInMonth(Number(selectedYear), Number(selectedMonth)).toString().padStart(2, '0')}`, {
+            const response = await fetch(`https://api.gajkesaristeels.in/travel-allowance/getForEmployeeAndDate?employeeId=${employeeId}&start=${selectedYear}-${selectedMonth}-01&end=${selectedYear}-${selectedMonth}-${getDaysInMonth(Number(selectedYear), Number(selectedMonth)).toString().padStart(2, '0')}`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`,
                 },
@@ -286,7 +278,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
 
                     await axios.post(
                         
-                        `${API_BASE_URL}/travel-allowance/create`,
+                        'https://api.gajkesaristeels.in/travel-allowance/create',
                         {
                             employeeId: employeeId,
                             date: detail.date,
