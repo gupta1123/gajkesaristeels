@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import styles from './Sidebar.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser, resetState, AppDispatch, RootState } from '../../store';
-import { FiLogOut, FiHome, FiUsers, FiMap, FiUser, FiClipboard, FiDollarSign, FiSettings, FiBarChart2, FiMenu, FiX } from 'react-icons/fi';
+import { FiLogOut, FiHome, FiUsers, FiMap, FiUser, FiClipboard, FiDollarSign, FiSettings, FiBarChart2, FiMenu, FiX, FiCheck } from 'react-icons/fi';
 import { GiSteelClaws } from 'react-icons/gi';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 
@@ -16,6 +16,7 @@ const sidebarItems = [
   { href: '/Requirements', icon: FiClipboard, label: 'Requirements', roles: ['ADMIN', 'MANAGER', 'FIELD OFFICER'] },
   { href: '/Complaints', icon: FiClipboard, label: 'Complaints', roles: ['ADMIN', 'MANAGER', 'FIELD OFFICER'] },
   { href: '/DailyPricing', icon: FiDollarSign, label: 'Pricing', roles: ['ADMIN', 'MANAGER'] },
+  { href: '/ApprovalPage', icon: FiCheck, label: 'Approvals', roles: ['ADMIN', 'MANAGER'] },
   { href: '/Reports', icon: FiBarChart2, label: 'Reports', roles: ['ADMIN'] },
   { href: '/CustomerListPage', icon: FiUsers, label: 'Customers', roles: ['ADMIN', 'MANAGER', 'FIELD OFFICER'] },
   { href: '/Employeelist', icon: FiUser, label: 'Employees', roles: ['ADMIN'] },

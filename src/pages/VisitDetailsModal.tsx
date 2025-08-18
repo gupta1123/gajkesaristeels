@@ -69,7 +69,7 @@ const VisitDetailsModal: React.FC<VisitDetailsModalProps> = ({ isOpen, onClose, 
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-6xl">
+            <DialogContent className="max-w-6xl ml-16">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-bold flex items-center space-x-2">
                         <FontAwesomeIcon icon={faCalendarAlt} className="text-blue-600" />
@@ -133,22 +133,135 @@ const VisitDetailsModal: React.FC<VisitDetailsModalProps> = ({ isOpen, onClose, 
                                     })}
                                 </TableBody>
                             </Table>
-                            <Pagination className="mt-4">
-                                <PaginationContent>
-                                    <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                                    {[...Array(Math.ceil(visitData.length / visitsPerPage)).keys()].map((page) => (
-                                        <PaginationItem key={page}>
-                                            <PaginationLink
-                                                isActive={page + 1 === currentPage}
-                                                onClick={() => handlePageChange(page + 1)}
-                                            >
-                                                {page + 1}
-                                            </PaginationLink>
-                                        </PaginationItem>
-                                    ))}
-                                    <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                                </PaginationContent>
-                            </Pagination>
+                            {/* Only show pagination if there are multiple pages */}
+                            {visitData.length > visitsPerPage && (
+                                <Pagination className="mt-4">
+                                    <PaginationContent>
+                                        {/* Only show Previous button if not on first page */}
+                                        {currentPage > 1 && (
+                                            <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                                        )}
+                                        
+                                        {/* Show page numbers with smart ellipsis */}
+                                        {(() => {
+                                            const totalPages = Math.ceil(visitData.length / visitsPerPage);
+                                            const pages = [];
+                                            
+                                            if (totalPages <= 7) {
+                                                // If 7 or fewer pages, show all
+                                                for (let i = 1; i <= totalPages; i++) {
+                                                    pages.push(
+                                                        <PaginationItem key={i}>
+                                                            <PaginationLink
+                                                                isActive={i === currentPage}
+                                                                onClick={() => handlePageChange(i)}
+                                                            >
+                                                                {i}
+                                                            </PaginationLink>
+                                                        </PaginationItem>
+                                                    );
+                                                }
+                                            } else {
+                                                // Smart pagination with ellipsis
+                                                if (currentPage <= 4) {
+                                                    // Show first 5 pages + ellipsis + last page
+                                                    for (let i = 1; i <= 5; i++) {
+                                                        pages.push(
+                                                            <PaginationItem key={i}>
+                                                                <PaginationLink
+                                                                    isActive={i === currentPage}
+                                                                    onClick={() => handlePageChange(i)}
+                                                                >
+                                                                    {i}
+                                                                </PaginationLink>
+                                                            </PaginationItem>
+                                                        );
+                                                    }
+                                                    pages.push(<PaginationEllipsis key="ellipsis1" />);
+                                                    pages.push(
+                                                        <PaginationItem key={totalPages}>
+                                                            <PaginationLink
+                                                                isActive={false}
+                                                                onClick={() => handlePageChange(totalPages)}
+                                                            >
+                                                                {totalPages}
+                                                            </PaginationLink>
+                                                        </PaginationItem>
+                                                    );
+                                                } else if (currentPage >= totalPages - 3) {
+                                                    // Show first page + ellipsis + last 5 pages
+                                                    pages.push(
+                                                        <PaginationItem key={1}>
+                                                            <PaginationLink
+                                                                isActive={false}
+                                                                onClick={() => handlePageChange(1)}
+                                                            >
+                                                                1
+                                                            </PaginationLink>
+                                                        </PaginationItem>
+                                                    );
+                                                    pages.push(<PaginationEllipsis key="ellipsis2" />);
+                                                    for (let i = totalPages - 4; i <= totalPages; i++) {
+                                                        pages.push(
+                                                            <PaginationItem key={i}>
+                                                                <PaginationLink
+                                                                    isActive={i === currentPage}
+                                                                    onClick={() => handlePageChange(i)}
+                                                                >
+                                                                    {i}
+                                                                </PaginationLink>
+                                                            </PaginationItem>
+                                                        );
+                                                    }
+                                                } else {
+                                                    // Show first page + ellipsis + current-1, current, current+1 + ellipsis + last page
+                                                    pages.push(
+                                                        <PaginationItem key={1}>
+                                                            <PaginationLink
+                                                                isActive={false}
+                                                                onClick={() => handlePageChange(1)}
+                                                            >
+                                                                1
+                                                            </PaginationLink>
+                                                        </PaginationItem>
+                                                    );
+                                                    pages.push(<PaginationEllipsis key="ellipsis3" />);
+                                                    for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                                                        pages.push(
+                                                            <PaginationItem key={i}>
+                                                                <PaginationLink
+                                                                    isActive={i === currentPage}
+                                                                    onClick={() => handlePageChange(i)}
+                                                                >
+                                                                    {i}
+                                                                </PaginationLink>
+                                                            </PaginationItem>
+                                                        );
+                                                    }
+                                                    pages.push(<PaginationEllipsis key="ellipsis4" />);
+                                                    pages.push(
+                                                        <PaginationItem key={totalPages}>
+                                                            <PaginationLink
+                                                                isActive={false}
+                                                                onClick={() => handlePageChange(totalPages)}
+                                                            >
+                                                                {totalPages}
+                                                            </PaginationLink>
+                                                        </PaginationItem>
+                                                    );
+                                                }
+                                            }
+                                            
+                                            return pages;
+                                        })()}
+                                        
+                                        {/* Only show Next button if not on last page */}
+                                        {currentPage < Math.ceil(visitData.length / visitsPerPage) && (
+                                            <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                                        )}
+                                    </PaginationContent>
+                                </Pagination>
+                            )}
                         </>
                     ) : (
                         <div className="text-center py-8">

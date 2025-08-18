@@ -1,0 +1,104 @@
+.container-approval {
+    max-width: 1200px;
+}
+
+/* Desktop layout - matches Employeelist.css */
+@media (min-width: 1024px) {
+    .container-approval {
+        width: 130%;
+        position: relative;
+        left: 240px;
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .container-approval {
+        width: 100%;
+        position: static;
+        left: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .container-approval {
+        width: 100%;
+        position: static;
+        left: 0;
+        padding: 0.5rem;
+    }
+}
+
+/* Additional styling for approval page specific elements */
+.approval-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.approval-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.approval-badge {
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.approval-actions {
+    gap: 0.5rem;
+}
+
+.approval-type-buttons {
+    gap: 0.25rem;
+}
+
+.approval-search-filters {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Loading skeleton styles */
+.approval-skeleton {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Error state styling */
+.approval-error-state {
+    text-align: center;
+    padding: 2rem;
+    color: #64748b;
+}
+
+/* Empty state styling */
+.approval-empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #64748b;
+}
+
+/* Responsive adjustments for approval cards */
+@media (max-width: 640px) {
+    .approval-card .flex-col {
+        gap: 1rem;
+    }
+    
+    .approval-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .approval-type-buttons {
+        justify-content: center;
+    }
+}

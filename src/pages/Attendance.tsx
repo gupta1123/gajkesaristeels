@@ -143,30 +143,38 @@ const Attendance: React.FC = () => {
       }
 
       try {
-        const response = await fetch(
-          `https://api.gajkesaristeels.in/visit/getByDateSorted?startDate=${date}&endDate=${date}&employeeName=${employeeName}&page=0&size=100&sort=id,desc`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const url = `https://api.gajkesaristeels.in/visit/getByDateSorted?startDate=${date}&endDate=${date}&employeeName=${employeeName}&page=0&size=100&sort=id,desc`;
+        
+        console.log('Making API request to:', url);
+        console.log('Request params:', { date, employeeName, token: token ? 'Present' : 'Missing' });
+        
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch visit data");
         }
 
         const data = await response.json();
+        
+        console.log('Visit API Response:', {
+          date,
+          employeeName,
+          totalElements: data.totalElements,
+          contentLength: data.content?.length,
+          content: data.content
+        });
 
-        // Filter the visits to only include those for the selected employee
-        const filteredVisits = data.content.filter((visit: any) => visit.employeeName === employeeName);
-
-        setVisitData(filteredVisits || []);
+        // The API already filters by employeeName, so we can use all the content directly
+        setVisitData(data.content || []);
         setSelectedDate(date);
         setSelectedEmployeeName(employeeName);
         setIsModalOpen(true);
 
-        if (filteredVisits.length === 0) {
+        if (data.content.length === 0) {
           setVisitData([]);
         }
       } catch (error) {
@@ -292,6 +300,16 @@ const Attendance: React.FC = () => {
           selectedDate={selectedDate}
           employeeName={selectedEmployeeName}
         />
+        
+        {/* Debug info */}
+        {isModalOpen && (
+          <div className="fixed bottom-4 right-4 bg-black text-white p-4 rounded-lg text-xs z-50">
+            <div>Modal Open: {isModalOpen.toString()}</div>
+            <div>Visit Data Length: {visitData.length}</div>
+            <div>Selected Date: {selectedDate}</div>
+            <div>Employee Name: {selectedEmployeeName}</div>
+          </div>
+        )}
       </div>
     </VisitListProvider>
   );

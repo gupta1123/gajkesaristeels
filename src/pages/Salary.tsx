@@ -41,6 +41,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const [data, setData] = useState<any[]>([]);
     const [isDataAvailable, setIsDataAvailable] = useState<boolean>(true);
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const [travelAllowanceData, setTravelAllowanceData] = useState<{ [key: number]: any }>({});
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isCalculating, setIsCalculating] = useState<{ [key: number]: boolean }>({});
@@ -81,7 +82,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
 
     const fetchEmployeeData = useCallback(async () => {
         try {
-            const response = await axios.get('https://api.gajkesaristeels.in/employee/getAll', {
+            const response = await axios.get('http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/employee/getAll', {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
             const employeeMap = response.data.reduce((acc: any, emp: any) => {
@@ -97,13 +98,18 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const fetchData = useCallback(async () => {
         try {
             if (selectedYear && selectedMonth) {
+                // Set loading state and clear old data
+                setIsLoading(true);
+                setData([]);
+                setIsDataAvailable(false);
+                
                 const now = new Date();
                 const isCurrentMonth = Number(selectedYear) === now.getFullYear() && Number(selectedMonth) === now.getMonth() + 1;
                 const endDay = isCurrentMonth ? now.getDate() - 1 : getDaysInMonth(Number(selectedYear), Number(selectedMonth));
 
                 const startDate = `${selectedYear}-${selectedMonth}-01`;
                 const endDate = `${selectedYear}-${selectedMonth}-${endDay.toString().padStart(2, '0')}`;
-                const url = `http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/attendance-log/getForRange?start=${startDate}&end=${endDate}`;
+                const url = `http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/salary-calculation/summary-range?startDate=${startDate}&endDate=${endDate}`;
                 
                 console.log('Fetching salary data for:', { selectedYear, selectedMonth, startDate, endDate, url });
                 
@@ -136,7 +142,10 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                 selectedMonth,
                 errorMessage: error instanceof Error ? error.message : 'Unknown error'
             });
+            setData([]);
             setIsDataAvailable(false);
+        } finally {
+            setIsLoading(false);
         }
     }, [selectedYear, selectedMonth, authToken]);
 
@@ -213,34 +222,8 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     };
 
     const calculateTotalSalary = (row: any, year: number, month: number) => {
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth() + 1;
-        const currentDate = today.getDate();
-
-        const isCurrentMonth = year === currentYear && month === currentMonth;
-        const lastDayToConsider = isCurrentMonth ? currentDate - 1 : getDaysInMonth(year, month);
-
-        const totalDaysInMonth = getDaysInMonth(year, month);
-        const totalDaysWorked = Math.min(row.fullDays + row.halfDays * 0.5, lastDayToConsider);
-
-        const baseSalary = calculateBaseSalary(row.salary || 0, totalDaysWorked, totalDaysInMonth);
-
-        const travelAllowance = calculateTravelAllowance(
-            row.distanceTravelledByCar || 0,
-            row.distanceTravelledByBike || 0,
-            row.pricePerKmCar || 0,
-            row.pricePerKmBike || 0
-        );
-
-        const employeeInfo = employeeData[row.employeeId] || {};
-        const dailyDA = employeeInfo.dearnessAllowance || 0;
-        const daForFullDays = dailyDA * row.fullDays;
-        const daForHalfDays = (dailyDA / 2) * row.halfDays;
-        const totalDA = Math.min(daForFullDays + daForHalfDays, dailyDA * lastDayToConsider);
-
-        const totalSalary = baseSalary + travelAllowance + totalDA + (row.statsDto?.approvedExpense || 0);
-        return Math.round(totalSalary);
+        // The new API already provides the calculated total salary
+        return Math.round(row.totalSalary || 0);
     };
 
     const getAnomalyCount = (employeeId: number) => {
@@ -294,6 +277,7 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     }
 
                     await axios.post(
+                        
                         'https://api.gajkesaristeels.in/travel-allowance/create',
                         {
                             employeeId: employeeId,
@@ -360,18 +344,27 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const sortedData = data.sort((a, b) => {
-        const nameA = `${a.employeeFirstName} ${a.employeeLastName}`.toLowerCase();
-        const nameB = `${b.employeeFirstName} ${b.employeeLastName}`.toLowerCase();
+        const nameA = a.employeeName.toLowerCase();
+        const nameB = b.employeeName.toLowerCase();
         return nameA.localeCompare(nameB);
     });
     const currentRows = sortedData
-        .filter(row => selectedFieldOfficer === "All Field Officers" || `${row.employeeFirstName} ${row.employeeLastName}` === selectedFieldOfficer).slice(indexOfFirstRow, indexOfLastRow);
+        .filter(row => selectedFieldOfficer === "All Field Officers" || row.employeeName === selectedFieldOfficer).slice(indexOfFirstRow, indexOfLastRow);
     const totalPages = Math.ceil(data.length / rowsPerPage);
 
-    const uniqueFieldOfficers = ["All Field Officers", ...Array.from(new Set(data.map(row => `${row.employeeFirstName} ${row.employeeLastName}`)))];
+    const uniqueFieldOfficers = ["All Field Officers", ...Array.from(new Set(data.map(row => row.employeeName)))];
 
     const getInitials = (firstName: string, lastName: string) => {
         return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    };
+
+    const getInitialsFromFullName = (fullName: string) => {
+        if (!fullName) return '';
+        const names = fullName.trim().split(' ');
+        if (names.length >= 2) {
+            return `${names[0].charAt(0)}${names[names.length - 1].charAt(0)}`.toUpperCase();
+        }
+        return fullName.charAt(0).toUpperCase();
     };
 
     const renderDesktopView = () => (
@@ -387,43 +380,19 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                         <th>DA</th>
                         <th>Expense</th>
                         <th>Total Salary</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {currentRows.map((row, index) => (
                         <tr key={index}>
-                            <td>{`${row.employeeFirstName} ${row.employeeLastName}`}</td>
+                            <td>{row.employeeName}</td>
                             <td>{row.fullDays}</td>
                             <td>{row.halfDays}</td>
-                            <td>₹{Math.round(calculateBaseSalary(row.salary || 0, (row.fullDays + row.halfDays * 0.5), getDaysInMonth(Number(selectedYear), Number(selectedMonth))))}</td>
-                            <td>₹{Math.round(calculateTravelAllowance(row.distanceTravelledByCar || 0, row.distanceTravelledByBike || 0, row.pricePerKmCar || 0, row.pricePerKmBike || 0))}</td>
-                            <td>₹{Math.round(((employeeData[row.employeeId]?.dearnessAllowance || 0) * row.fullDays) + ((employeeData[row.employeeId]?.dearnessAllowance || 0) / 2 * row.halfDays))}</td>
-                            <td>₹{Math.round(row.statsDto?.approvedExpense || 0)}</td>
-                            <td>₹{calculateTotalSalary(row, Number(selectedYear), Number(selectedMonth))}</td>
-                            <td>
-                                {getAnomalyCount(row.employeeId) > 0 && (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => calculateDistances(row.employeeId)}
-                                                    disabled={isCalculating[row.employeeId]}
-                                                    className={styles.tooltipButton}
-                                                >
-                                                    <ExclamationTriangleIcon className={`mr-2 h-4 w-4 ${styles.warningIcon}`} />
-                                                    {isCalculating[row.employeeId] ? 'Calculating...' : `Calculate (${getAnomalyCount(row.employeeId)})`}
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent className={styles.customTooltip}>
-                                                <p>{getAnomalyCount(row.employeeId)} day(s) with checkout but no distance traveled</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                )}
-                            </td>
+                            <td>₹{Math.round(row.baseSalary || 0)}</td>
+                            <td>₹{Math.round(row.travelAllowance || 0)}</td>
+                            <td>₹{Math.round(row.dearnessAllowance || 0)}</td>
+                            <td>₹{Math.round(row.approvedExpenses || 0)}</td>
+                            <td>₹{Math.round(row.totalSalary || 0)}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -438,15 +407,15 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     <CollapsibleTrigger className={styles.cardHeader}>
                         <div className={styles.employeeInfo}>
                             <Avatar className={styles.avatar}>
-                                <AvatarFallback>{getInitials(row.employeeFirstName, row.employeeLastName)}</AvatarFallback>
+                                <AvatarFallback>{getInitialsFromFullName(row.employeeName)}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <CardTitle className={styles.employeeName}>{`${row.employeeFirstName} ${row.employeeLastName}`}</CardTitle>
+                                <CardTitle className={styles.employeeName}>{row.employeeName}</CardTitle>
                                 <p className={styles.employeeRole}>Field Officer</p>
                             </div>
                         </div>
                         <div className={styles.totalSalary}>
-                            ₹{calculateTotalSalary(row, Number(selectedYear), Number(selectedMonth))}
+                            ₹{Math.round(row.totalSalary || 0)}
                         </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent className={styles.cardContent}>
@@ -469,60 +438,31 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                                 <CurrencyDollarIcon className={styles.icon} />
                                 <div>
                                     <span className={styles.label}>Base Salary:</span>
-                                    <span className={styles.value}>₹{Math.round(calculateBaseSalary(row.salary || 0, (row.fullDays + row.halfDays * 0.5), getDaysInMonth(Number(selectedYear), Number(selectedMonth))))}</span>
+                                    <span className={styles.value}>₹{Math.round(row.baseSalary || 0)}</span>
                                 </div>
                             </div>
                             <div className={styles.detailItem}>
                                 <TruckIcon className={styles.icon} />
                                 <div>
                                     <span className={styles.label}>TA:</span>
-                                    <span className={styles.value}>₹{Math.round(calculateTravelAllowance(row.distanceTravelledByCar || 0, row.distanceTravelledByBike || 0, row.pricePerKmCar || 0, row.pricePerKmBike || 0))}</span>
+                                    <span className={styles.value}>₹{Math.round(row.travelAllowance || 0)}</span>
                                 </div>
                             </div>
                             <div className={styles.detailItem}>
                                 <CalculatorIcon className={styles.icon} />
                                 <div>
                                     <span className={styles.label}>DA:</span>
-                                    <span className={styles.value}>₹{Math.round(((employeeData[row.employeeId]?.dearnessAllowance || 0) * row.fullDays) + ((employeeData[row.employeeId]?.dearnessAllowance || 0) / 2 * row.halfDays))}</span>
+                                    <span className={styles.value}>₹{Math.round(row.dearnessAllowance || 0)}</span>
                                 </div>
                             </div>
                             <div className={styles.detailItem}>
                                 <CurrencyDollarIcon className={styles.icon} />
                                 <div>
                                     <span className={styles.label}>Expense:</span>
-                                    <span className={styles.value}>₹{Math.round(row.statsDto?.approvedExpense || 0)}</span>
+                                    <span className={styles.value}>₹{Math.round(row.approvedExpenses || 0)}</span>
                                 </div>
                             </div>
                         </div>
-                        {getAnomalyCount(row.employeeId) > 0 && (
-                            <div className={styles.anomalyWarning}>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => calculateDistances(row.employeeId)}
-                                                disabled={isCalculating[row.employeeId]}
-                                                className={styles.anomalyButton}
-                                            >
-                                                {isCalculating[row.employeeId] ? (
-                                                    "Calculating..."
-                                                ) : (
-                                                    <>
-                                                        <ExclamationTriangleIcon className={styles.warningIcon} />
-                                                        {getAnomalyCount(row.employeeId)} anomalies detected
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Click to recalculate distances for days with anomalies</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </div>
-                        )}
                     </CollapsibleContent>
                 </Collapsible>
             ))}
@@ -534,7 +474,11 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
             <h2 className={styles.pageTitle}>Salary Details</h2>
             <div className={styles.filterContainer}>
                 <div className={styles.selectContainer}>
-                    <Select onValueChange={setSelectedYear} defaultValue={selectedYear}>
+                    <Select onValueChange={(value) => {
+                        setSelectedYear(value);
+                        setCurrentPage(1); // Reset to first page when changing year
+                        setIsLoading(true); // Show loading immediately
+                    }} defaultValue={selectedYear}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Year" />
                         </SelectTrigger>
@@ -548,7 +492,11 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     </Select>
                 </div>
                 <div className={styles.selectContainer}>
-                    <Select onValueChange={setSelectedMonth} defaultValue={selectedMonth}>
+                    <Select onValueChange={(value) => {
+                        setSelectedMonth(value);
+                        setCurrentPage(1); // Reset to first page when changing month
+                        setIsLoading(true); // Show loading immediately
+                    }} defaultValue={selectedMonth}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Month" />
                         </SelectTrigger>
@@ -562,7 +510,13 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     </Select>
                 </div>
                 <div className={styles.selectContainer}>
-                    <Select onValueChange={setSelectedFieldOfficer} defaultValue={selectedFieldOfficer}>
+                    <Select onValueChange={(value) => {
+                        setSelectedFieldOfficer(value);
+                        setCurrentPage(1); // Reset to first page when changing field officer
+                        // Brief loading state for filter change
+                        setIsLoading(true);
+                        setTimeout(() => setIsLoading(false), 300);
+                    }} defaultValue={selectedFieldOfficer}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Field Officer" />
                         </SelectTrigger>
@@ -576,7 +530,12 @@ const Salary: React.FC<{ authToken: string | null }> = ({ authToken }) => {
                     </Select>
                 </div>
             </div>
-            {isDataAvailable ? (
+            {isLoading ? (
+                <div className={styles.loadingContainer}>
+                    <div className={styles.loadingSpinner}></div>
+                    <p className={styles.loadingText}>Loading salary data...</p>
+                </div>
+            ) : isDataAvailable ? (
                 <>
                     {isMobileView ? (
                         <div className={styles.cardView}>
