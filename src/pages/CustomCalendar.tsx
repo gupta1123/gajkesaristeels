@@ -64,8 +64,14 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
           const tooltip = document.createElement('span');
           tooltip.classList.add('calendar-tooltip');
 
-          // Priority: if there's an attendance record, use it
-          if (attendanceStatus) {
+          // Priority: Sundays are always green (full day) regardless of attendance data
+          if (date.getDay() === 0) {
+            dateDiv.classList.add('full-day');
+            tooltip.textContent = 'Full Day (Sunday)';
+            fullDays++;
+          }
+          // Otherwise, if there's an attendance record, use it
+          else if (attendanceStatus) {
             dateDiv.classList.add(attendanceStatus.toLowerCase().replace(' ', '-'));
             tooltip.textContent = ` ${attendanceStatus}`;
 
@@ -76,12 +82,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
             } else if (attendanceStatus === 'Absent') {
               absentDays++;
             }
-          }
-          // Otherwise, if it's Sunday and no attendance record, default to "full day"
-          else if (date.getDay() === 0) {
-            dateDiv.classList.add('full-day');
-            tooltip.textContent = 'Full Day';
-            fullDays++;
           }
 
           dateDiv.appendChild(tooltip);
