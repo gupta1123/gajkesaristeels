@@ -343,20 +343,38 @@ const AppContent = ({
   getLayout: (page: React.ReactElement) => React.ReactNode;
 }) => {
   const token = useSelector((state: RootState) => state.auth.token);
-  const isValidToken = token && isTokenValid(token);
   const [showSplash, setShowSplash] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Check for valid token in localStorage if not in state (client-side only)
+  const storedToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const hasValidToken = (token && isTokenValid(token)) || (storedToken && isTokenValid(storedToken));
 
   useEffect(() => {
-    if (isValidToken) {
+    // Give a moment for token restoration
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (hasValidToken) {
       setShowSplash(true);
       const timer = setTimeout(() => {
         setShowSplash(false);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isValidToken]);
+  }, [hasValidToken]);
 
-  if (!isValidToken) {
+  // Show loading during initialization
+  if (isInitializing) {
+    return <SplashScreen />;
+  }
+
+  if (!hasValidToken) {
     return <LoginPage />;
   }
 
@@ -387,9 +405,11 @@ const AuthWrapper = ({ children }: { children: ReactNode }) => {
 
   // Function to clear auth data and redirect
   const clearAuthAndRedirect = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('username');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('username');
+    }
     dispatch(setToken(''));
     dispatch(setRole(null));
     
@@ -430,36 +450,46 @@ const AuthWrapper = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Initial auth check on mount and route change
+  // Initial auth check on mount only (client-side only)
   useEffect(() => {
+    if (typeof window === 'undefined') return; // Skip on server-side
+    
     const storedToken = localStorage.getItem('token');
     const storedRole = localStorage.getItem('role');
     const storedUsername = localStorage.getItem('username');
 
-    if (storedToken) {
-      if (isTokenValid(storedToken)) {
-        if (!token) {
-          dispatch(setToken(storedToken));
-          setupAxiosDefaults(storedToken);
-        }
-      } else {
-        clearAuthAndRedirect();
-        return;
+    if (storedToken && isTokenValid(storedToken)) {
+      // Only restore if we don't already have a token in state
+      if (!token) {
+        dispatch(setToken(storedToken));
+        setupAxiosDefaults(storedToken);
       }
-    }
+      
+      if (storedRole && !role) {
+        dispatch(setRole(storedRole as RootState['auth']['role']));
+      }
 
-    if (storedRole && !role) {
-      dispatch(setRole(storedRole as RootState['auth']['role']));
+      if (storedUsername && !username) {
+        dispatch(fetchUserInfo(storedUsername));
+      }
+    } else if (storedToken && !isTokenValid(storedToken)) {
+      // Token exists but is expired - clear it
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('username');
+      localStorage.removeItem('teamId');
     }
+  }, []); // Empty dependency array - only run on mount
 
-    if (storedUsername && !username) {
-      dispatch(fetchUserInfo(storedUsername));
-    }
-  }, [dispatch, token, role, username, router.pathname]);
-
-  // Protect routes
+  // Protect routes - only redirect if we're sure there's no valid token
   useEffect(() => {
-    if (!token && router.pathname !== '/') {
+    if (typeof window === 'undefined') return; // Skip on server-side
+    
+    const storedToken = localStorage.getItem('token');
+    const hasValidStoredToken = storedToken && isTokenValid(storedToken);
+    
+    // Only redirect if we have no token in state AND no valid token in localStorage
+    if (!token && !hasValidStoredToken && router.pathname !== '/') {
       router.push('/');
     }
   }, [token, router.pathname]);
