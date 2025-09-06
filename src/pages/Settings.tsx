@@ -2,26 +2,28 @@
 
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import Salary from './Salary';
+import EmployeeSummary from '@/components/EmployeeSummary';
 import Allowance from './Allowance';
 import WorkingDays from './WorkingDays';
 import Teams from './Teams';
 import TargetComponent from '@/components/Target';
+import SalaryCalculationTabs from '@/components/SalaryCalculationTabs';
 
 import { RootState } from '../store';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import './Settings.css';
 
 export default function Settings() {
-    const [activeTab, setActiveTab] = useState('salary');
+    const [activeTab, setActiveTab] = useState('employeeSummary');
     const authToken = useSelector((state: RootState) => state.auth.token);
 
     const tabs = [
-        { id: 'salary', label: 'Salary', component: <Salary authToken={authToken || ''} /> },
+        { id: 'employeeSummary', label: 'Employee Summary', component: <EmployeeSummary /> },
         { id: 'allowance', label: 'Allowance', component: <Allowance authToken={authToken || ''} /> },
         { id: 'workingDays', label: 'Working Days', component: <WorkingDays authToken={authToken || ''} /> },
         { id: 'team', label: 'Team', component: <Teams authToken={authToken || ''} /> },
         { id: 'target', label: 'Target', component: <TargetComponent /> },
+        { id: 'salaryCalculation', label: 'Daily Breakdown', component: <SalaryCalculationTabs /> },
     ];
 
     return (
