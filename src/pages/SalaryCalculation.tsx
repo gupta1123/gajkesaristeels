@@ -90,7 +90,7 @@ const SalaryCalculation: React.FC = () => {
             const endDate = format(dateRange.to, 'yyyy-MM-dd');
 
             const response = await axios.get(
-                `https://api.gajkesaristeels.in/salary-calculation/manual-summary-range?startDate=${startDate}&endDate=${endDate}`,
+                `http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/salary-calculation/manual-summary-range?startDate=${startDate}&endDate=${endDate}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -124,7 +124,7 @@ const SalaryCalculation: React.FC = () => {
             const employeeId = selectedEmployee === 'all' ? '139' : selectedEmployee;
 
             const response = await axios.get(
-                `https://api.gajkesaristeels.in/salary-calculation/daily-breakdown?employeeId=${employeeId}&startDate=${startDate}&endDate=${endDate}`,
+                `http://ec2-3-88-111-83.compute-1.amazonaws.com:8081/salary-calculation/daily-breakdown?employeeId=${employeeId}&startDate=${startDate}&endDate=${endDate}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
